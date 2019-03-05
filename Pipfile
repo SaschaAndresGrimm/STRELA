@@ -1,0 +1,21 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+pyqt5 = "*"
+pyqtgraph = "*"
+qdarkstyle = "*"
+requests = "*"
+zmq = "*"
+lz4 = "*"
+bitshuffle = {editable = true,git = "git+https://github.com/kiyo-masui/bitshuffle.git"}
+tifffile = "*"
+pandas = "*"
+pipfile = {editable = true,version = "*"}
+
+[requires]
+python_version = "3.7"
