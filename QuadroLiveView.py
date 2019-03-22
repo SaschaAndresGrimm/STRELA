@@ -60,7 +60,7 @@ class UI(QtWidgets.QMainWindow):
         self.setupStatusBar()
 
     def setupcontrolPannel(self):
-        self.controlPannel = control.DetectorControl("192.168.30.62")
+        self.controlPannel = control.DetectorControl("10.42.41.10")
         self.centralWidget.addWidget(self.controlPannel)
         handle = self.centralWidget.handle(1)
         layout = QtWidgets.QVBoxLayout()

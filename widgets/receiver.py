@@ -28,8 +28,8 @@ class Receiver(QWidget):
         self.client.query("stream","config","mode",key="enabled")
         self.imagesReceived = 0
 
-    def setupReceivers(self):
-        self.receivers = [ZMQReceiver(self.ip, name=str(i)) for i in range(8)]
+    def setupReceivers(self, nThreads = 1):
+        self.receivers = [ZMQReceiver(self.ip, name=str(i)) for i in range(nThreads)]
         for receiver in self.receivers:
             receiver.signals.result.connect(self.handleData)
             self.buttonLiveView.clicked.connect(self.onLiveViewClicked)
