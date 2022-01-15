@@ -51,6 +51,7 @@ class ZMQReceiver(QThread):
                 data[-1,-1] = -1
                 
                 # set overflow values to 0 for better contrast
+                # typecasting to signed int might be better...
                 data[data==(2**(8*data.itemsize)-1)] = 0
                                 
                 return data

@@ -1,9 +1,10 @@
 """
-STRELA -- STRE(am) L(iveview) A(pplication)
-Basic demonstration of a LiveViewer for small DECTRIS area detectors with SIMPLON API.
+STRELA -- STRE(am) L(iveview) A(pp)
+Demonstration of a basic LiveViewer for small DECTRIS area detectors with SIMPLON API.
 """
 import PyQt5
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSlot
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 import qdarkstyle
@@ -12,7 +13,7 @@ import signal
 import logging
 import sys, os, argparse, datetime, time
 import tifffile
-from tools import zmqReceiver, monitorReceiver
+from tools import zmqReceiver, monitorReceiver, DEigerClient, statusUpdater
 
 __author__ = "Sascha Grimm"
 __date__ = "2022.01.15"
@@ -24,8 +25,9 @@ class UI(QtWidgets.QMainWindow):
 
     def __init__(self, ip, threads=1, fps=10, sType='zmq'):
         super(UI, self).__init__()
+        self.ip = ip
         self.setupUI()
-        self.setupReceivers(ip, threads, sType)
+        self.setupReceivers(self.ip, threads, sType)
         self.show()
                 
         #frame rate calculations
@@ -42,8 +44,13 @@ class UI(QtWidgets.QMainWindow):
         self.displayTimer.start(1/self.fps*1000)    
         logging.info(f"max. display refresh rate: {self.fps} Hz")
         
+        #detector status information update
+        self.statusUpdater = statusUpdater.StatusUpdater(self.ip)
+        self.statusUpdater.start()
+        self.statusUpdater.signals.detectorStatus.connect(self.updateStatus)
+        
     def setupUI(self):
-        self.setWindowTitle("STRELA -- Stream LiveView Application")
+        self.setWindowTitle("STRELA -- Stream LiveView App")
         self.resize(1000,1000)
 
         self.centralWidget = QtWidgets.QSplitter(self)
@@ -84,12 +91,20 @@ class UI(QtWidgets.QMainWindow):
         self.labelImagesDisplayed = QtWidgets.QLabel(self.centralWidget)
         horizontalLayout.addWidget(self.labelImagesDisplayed)
         self.labelImagesDisplayed.setText("images displayed: 0")
-        
-        horizontalLayout.addItem(spacerItem)
-        
+                
         self.labelFrameRate = QtWidgets.QLabel(self.centralWidget)
         horizontalLayout.addWidget(self.labelFrameRate)
-        self.labelFrameRate.setText("display frame rate: NaN Hz")
+        self.labelFrameRate.setText("display fps: NaN Hz")
+        
+        horizontalLayout.addItem(spacerItem)
+
+        #detector states
+        self.statusZmq = QtWidgets.QLabel('Stream: na', self.centralWidget)
+        self.statusMonitor = QtWidgets.QLabel('Monitor: na', self.centralWidget)
+        self.statusDetector = QtWidgets.QLabel('Detector: na', self.centralWidget)
+        horizontalLayout.addWidget(self.statusZmq)
+        horizontalLayout.addWidget(self.statusMonitor)
+        horizontalLayout.addWidget(self.statusDetector)
 
         self.statusBar.addWidget(widget)
 
@@ -136,7 +151,7 @@ class UI(QtWidgets.QMainWindow):
         t = datetime.datetime.now().time()
         dt = t.second - self.startTime.second + (t.microsecond-self.startTime.microsecond)/1000000
         frameRate = dImages/dt
-        self.labelFrameRate.setText(f"display frame rate: {frameRate:.1f} Hz")
+        self.labelFrameRate.setText(f"display fps: {frameRate:.1f} Hz")
         self.startTime = datetime.datetime.now().time() 
         self.imageCounter = self._imagesDisplayed
         return frameRate
@@ -148,22 +163,40 @@ class UI(QtWidgets.QMainWindow):
             self.receivers = [monitorReceiver.MonitorReceiver(ip, port=80, name = i+1) for i in range(threads)]
         elif sType == 'zmq':
             self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+        elif sType == 'dummy':
+            return
         else:
             logging.info(f'receiver type {sType} unknown, using zmq')
             self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
 
         for receiver in self.receivers:
             receiver.start()
-            receiver.signals.dataReceived.connect(self.updateData)
+            receiver.signals.dataReceived.connect(self.updateData)        
+
+    def updateStatus(self, status):
+        self._setStatus(self.statusDetector, status['det'])
+        self._setStatus(self.statusMonitor, status['monitor'])
+        self._setStatus(self.statusZmq, status['stream'])
+
+    def _setStatus(self, widget, status):
+        text = widget.text()
+        newText = f'{text.split(":")[0]}: {status}'
+        widget.setText(newText)
+        if status in ['error','na', 'disabled']:
+            widget.setStyleSheet("background-color: red")
+        elif status in ['overflow', 'initialize', 'configure']:
+            widget.setStyleSheet("background-color: orange")
+        else:
+            widget.setStyleSheet("background-color: green")
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=DBGLVL)
     
-    parser = argparse.ArgumentParser(description='STRELA ZMQ LiveView for DECTRIS detectors')
+    parser = argparse.ArgumentParser(description='STRELA LiveView for DECTRIS detectors')
     parser.add_argument('ip', type=str, help="DECTRIS detector IP or hostname")
-    parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of ZMQ receiver threads")
+    parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of receiver threads")
     parser.add_argument('--fps', '-f', type=float, default=10.0, help="display refresh rate in Hz")
-    parser.add_argument('--stream', '-s', type=str, default="zmq", help="interface to use: zmq or monitor")
+    parser.add_argument('--stream', '-s', type=str, default="zmq", help="interface to use: [zmq|monitor|dummy]")
 
     args = parser.parse_args()
     
