@@ -1,5 +1,5 @@
 """
-Demonstrate basic use of a ZMQ LiveView
+Demonstrate basic implementation of a ZMQ LiveView
 """
 import logging
 
@@ -7,34 +7,33 @@ import PyQt5
 from PyQt5 import QtWidgets
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
-import pyqtgraph.ptime as ptime
-
 import qdarkstyle
 
-from widgets import control
-
-import sys, os
+import sys, os, argparse
 import tifffile
+from tools import zmqReceiver
 
-__author__ = "SasG"
-__date__ = "3/03/19"
-__version__ = "0.5"
-__reviewer__ = ""
+__author__ = "Sascha Grimm"
+__date__ = "2022.01.14"
+__version__ = "1"
+
+DBGLVL = logging.INFO
 
 class UI(QtWidgets.QMainWindow):
 
-    def __init__(self, maxFrameRate=16):
+    def __init__(self, ip, threads=4):
         super(UI, self).__init__()
         self.setupUI()
-
-        self._maxFrameRate = maxFrameRate
+        self.setupZmqReceivers(ip, threads)
         self._imagesDisplayed = 0
-
         self.show()
+        
+        for receiver in self.receivers:
+            receiver.signals.dataReceived.connect(self.updateData)
 
     def setupUI(self):
-        self.setWindowTitle("#MakE\'M Count")
-        self.resize(1500,300)
+        self.setWindowTitle("QUADRO LiveView")
+        self.resize(1000,1000)
 
         self.centralWidget = QtWidgets.QSplitter(self)
         self.setCentralWidget(self.centralWidget)
@@ -42,50 +41,16 @@ class UI(QtWidgets.QMainWindow):
 
         pg.setConfigOptions(imageAxisOrder='row-major')
 
-        imgData = tifffile.imread(os.path.join("ressources","logo.tif"))
-        self.plotItemReal = pg.PlotItem(title="real")
+        imgData = tifffile.imread(os.path.join("ressources","pizQuadro.tif"))
+        
+        self.plotItemReal = pg.PlotItem(title="")
         self.imageViewReal = pg.ImageView(view=self.plotItemReal)
         self.centralWidget.addWidget(self.imageViewReal)
         self.imageViewReal.keyPressEvent = self.keyPressEvent
         self.imageViewReal.scene.sigMouseMoved.connect(self.mouseMoved)
         self.imageViewReal.setImage(imgData)
 
-        self.plotItemFFT = pg.PlotItem(title="FFT")
-        self.imageViewFFT = pg.ImageView(view=self.plotItemFFT)
-        self.imageViewFFT.keyPressEvent = self.keyPressEvent
-        self.centralWidget.addWidget(self.imageViewFFT)
-        self.imageViewFFT.setImage(imgData)
-
-        self.setupcontrolPannel()
         self.setupStatusBar()
-
-    def setupcontrolPannel(self):
-        self.controlPannel = control.DetectorControl("10.42.41.10")
-        self.centralWidget.addWidget(self.controlPannel)
-        handle = self.centralWidget.handle(1)
-        layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        button = QtWidgets.QToolButton(handle)
-        button.setArrowType(QtCore.Qt.LeftArrow)
-        button.clicked.connect(
-            lambda: self.handleSplitterButton(True))
-        layout.addWidget(button)
-        button = QtWidgets.QToolButton(handle)
-        button.setArrowType(QtCore.Qt.RightArrow)
-        button.clicked.connect(
-            lambda: self.handleSplitterButton(False))
-        layout.addWidget(button)
-        handle.setLayout(layout)
-
-        self.controlPannel.receiver.dataReceived.connect(self.updateData)
-
-    def handleSplitterButton(self, left=True):
-        if not all(self.centralWidget.sizes()):
-            self.centralWidget.setSizes([1, 1])
-        elif left:
-            self.centralWidget.setSizes([0, 1])
-        else:
-            self.centralWidget.setSizes([1, 0])
 
     def setupStatusBar(self):
         self.statusBar = QtWidgets.QStatusBar()
@@ -118,37 +83,43 @@ class UI(QtWidgets.QMainWindow):
             row, col = int(scenePos.y()), int(scenePos.x())
 
             if 0 <= row and row < nRows and 0 <= col and col < nCols:
-                value = data[col,row]
-                self.labelCoordinates.setText("x %d, y %d, I %.1f" % (row, col, float(value)))
+                value = data[row,col]
+                self.labelCoordinates.setText("I(%d,%d) = %d" % (col, row, value))
 
             else:
-                self.labelCoordinates.setText("x, y, I")
+                self.labelCoordinates.setText("I(x,y) = NaN")
 
         except Exception as e:
             self.labelCoordinates.setText("Error: %s"%e)
 
-    def keyPressEvent(self, ev):
-        if ev.key() == QtCore.Qt.Key_Space:
-            self.controlPannel.receiver.buttonLiveView.toggle()
-
     def updateData(self, data):
         if data is not None:
             self._imagesDisplayed += 1
-            logging.info("image received, {} {}".format(data["real"].shape, data["real"].dtype))
-            self.imageViewReal.setImage(data["real"], autoRange=False,
-                                autoLevels=False, autoHistogramRange= False)
-            self.imageViewFFT.setImage(data["fft"], autoRange=False,
+            logging.debug("image {} received, {} {}".format(self._imagesDisplayed, data.shape, data.dtype))
+            self.imageViewReal.setImage(data, autoRange=False,
                                 autoLevels=False, autoHistogramRange= False)
             self.labelImagesDisplayed.setText("images displayed: {}".format(self._imagesDisplayed))
 
+    def setupZmqReceivers(self, ip, threads=1):
+        self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+        for receiver in self.receivers:
+            receiver.start()
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='QUADRO LiveViewer')
+    parser.add_argument('ip', type=str, help="QUADRO IP or hostname")
+    parser.add_argument('--nThreads', '-n', type=int, default=2, help="number of ZMQ receiver threads")
+    args = parser.parse_args()
+    
     try:
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
+        logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=DBGLVL)
+        
         app = QtGui.QApplication(sys.argv)
         app.setWindowIcon(QtGui.QIcon(os.path.join("ressources","icon.png")))
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-        ui = UI()
-    except Exception as e:
+        ui = UI(args.ip, args.nThreads)
+        
+    except (Exception, KeyboardInterrupt) as e:
         logging.error(e)
     finally:
         sys.exit(app.exec_())
