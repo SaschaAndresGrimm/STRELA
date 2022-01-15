@@ -18,9 +18,9 @@ class ZMQReceiver(QThread):
         self.connect()
         
     def enableStream(self):
+        logging.debug(f'enabling stream on {self.ip}')
         client = DEigerClient.DEigerClient(self.ip)
         resp = client.setStreamConfig('mode','enabled')
-        logging.debug(f'stream enabled on {self.ip}')
 
     def connect(self):
         self.context = zmq.Context()
