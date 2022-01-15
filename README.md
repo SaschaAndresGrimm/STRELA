@@ -4,7 +4,7 @@ using the DECTRIS zmq stream itnerface.
 
 
 ## How to run
-usage: Strela.py [-h] [--nThreads NTHREADS] [--fps FPS] ip
+usage: Strela.py [-h] [--nThreads NTHREADS] [--fps FPS] [--stream STREAM] ip
 
 STRELA ZMQ LiveView for DECTRIS detectors
 
@@ -16,6 +16,8 @@ optional arguments:
   --nThreads NTHREADS, -n NTHREADS
                         number of ZMQ receiver threads
   --fps FPS, -f FPS     display refresh rate in Hz
+  --stream STREAM, -s STREAM
+                        interface to use: zmq or monitor
 
 ## Functionalities
 LiveView via ZMQ stream interface

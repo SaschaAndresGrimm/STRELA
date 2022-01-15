@@ -1,5 +1,6 @@
 """
-Basic demonstration of a ZMQ LiveView for small DECTRIS area detectors
+STRELA -- STRE(am) L(iveview) A(pplication)
+Basic demonstration of a LiveViewer for small DECTRIS area detectors with SIMPLON API.
 """
 import PyQt5
 from PyQt5 import QtWidgets
@@ -11,7 +12,7 @@ import signal
 import logging
 import sys, os, argparse, datetime, time
 import tifffile
-from tools import zmqReceiver
+from tools import zmqReceiver, monitorReceiver
 
 __author__ = "Sascha Grimm"
 __date__ = "2022.01.15"
@@ -21,10 +22,10 @@ DBGLVL = logging.INFO
 
 class UI(QtWidgets.QMainWindow):
 
-    def __init__(self, ip, threads=1, fps=10):
+    def __init__(self, ip, threads=1, fps=10, sType='zmq'):
         super(UI, self).__init__()
         self.setupUI()
-        self.setupZmqReceivers(ip, threads)
+        self.setupReceivers(ip, threads, sType)
         self.show()
                 
         #frame rate calculations
@@ -42,7 +43,7 @@ class UI(QtWidgets.QMainWindow):
         logging.info(f"max. display refresh rate: {self.fps} Hz")
         
     def setupUI(self):
-        self.setWindowTitle("STRELA ZMQ LiveView")
+        self.setWindowTitle("STRELA -- Stream LiveView Application")
         self.resize(1000,1000)
 
         self.centralWidget = QtWidgets.QSplitter(self)
@@ -74,7 +75,7 @@ class UI(QtWidgets.QMainWindow):
 
         self.labelCoordinates = QtWidgets.QLabel(self.centralWidget)
         horizontalLayout.addWidget(self.labelCoordinates)
-        self.labelCoordinates.setText("x, y, z")
+        self.labelCoordinates.setText("I(x, y)")
 
         spacerItem = PyQt5.QtWidgets.QSpacerItem(10000, 0, PyQt5.QtWidgets.QSizePolicy.Expanding,
                                                 PyQt5.QtWidgets.QSizePolicy.Expanding)
@@ -140,10 +141,17 @@ class UI(QtWidgets.QMainWindow):
         self.imageCounter = self._imagesDisplayed
         return frameRate
 
-    def setupZmqReceivers(self, ip, threads=1):
+    def setupReceivers(self, ip, threads=1, sType='zmq'):
         self.imagesReceived = 0
-        logging.info(f"starting {threads} zmq receivers")
-        self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+        logging.info(f"starting {threads} {sType} receivers")
+        if sType == 'monitor':
+            self.receivers = [monitorReceiver.MonitorReceiver(ip, port=80, name = i+1) for i in range(threads)]
+        elif sType == 'zmq':
+            self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+        else:
+            logging.info(f'receiver type {sType} unknown, using zmq')
+            self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+
         for receiver in self.receivers:
             receiver.start()
             receiver.signals.dataReceived.connect(self.updateData)
@@ -155,6 +163,8 @@ if __name__ == "__main__":
     parser.add_argument('ip', type=str, help="DECTRIS detector IP or hostname")
     parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of ZMQ receiver threads")
     parser.add_argument('--fps', '-f', type=float, default=10.0, help="display refresh rate in Hz")
+    parser.add_argument('--stream', '-s', type=str, default="zmq", help="interface to use: zmq or monitor")
+
     args = parser.parse_args()
     
     signal.signal(signal.SIGINT, signal.SIG_DFL) #enable ctrl + c abort   
@@ -163,7 +173,7 @@ if __name__ == "__main__":
         app = QtGui.QApplication(sys.argv)
         app.setWindowIcon(QtGui.QIcon(os.path.join("ressources","icon.png")))
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-        ui = UI(args.ip, args.nThreads, args.fps)
+        ui = UI(args.ip, args.nThreads, args.fps, args.stream)
         
     except (Exception, KeyboardInterrupt) as e:
         logging.error(e)
