@@ -1,5 +1,5 @@
 """
-Basic implementation of a ZMQ LiveView for DECTRIS detector
+Basic demonstration of a ZMQ LiveView for small DECTRIS area detectors
 """
 import PyQt5
 from PyQt5 import QtWidgets
@@ -8,39 +8,41 @@ import pyqtgraph as pg
 import qdarkstyle
 import signal
 
-
 import logging
-import sys, os, argparse, datetime
+import sys, os, argparse, datetime, time
 import tifffile
 from tools import zmqReceiver
 
 __author__ = "Sascha Grimm"
-__date__ = "2022.01.14"
-__version__ = "1.0"
+__date__ = "2022.01.15"
+__version__ = "0.9"
 
 DBGLVL = logging.INFO
 
 class UI(QtWidgets.QMainWindow):
 
-    def __init__(self, ip, threads=4):
+    def __init__(self, ip, threads=1, fps=10):
         super(UI, self).__init__()
         self.setupUI()
         self.setupZmqReceivers(ip, threads)
-        self._imagesDisplayed = 0
         self.show()
-        
-        for receiver in self.receivers:
-            receiver.signals.dataReceived.connect(self.updateData)
-            
-        #frame time calculation
+                
+        #frame rate calculations
         self.startTime = datetime.datetime.now().time()
         self.imageCounter = 0
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.updateFrameRate)
         self.timer.start(500)
-
+        
+        #display refresh frequency
+        self.fps = fps
+        self.displayTimer = pg.QtCore.QTimer()
+        self.displayTimer.timeout.connect(self.updateImageView)
+        self.displayTimer.start(1/self.fps*1000)    
+        logging.info(f"max. display refresh rate: {self.fps} Hz")
+        
     def setupUI(self):
-        self.setWindowTitle("STRELA LiveView")
+        self.setWindowTitle("STRELA ZMQ LiveView")
         self.resize(1000,1000)
 
         self.centralWidget = QtWidgets.QSplitter(self)
@@ -48,15 +50,17 @@ class UI(QtWidgets.QMainWindow):
         self.layout = QtWidgets.QHBoxLayout(self.centralWidget)
 
         pg.setConfigOptions(imageAxisOrder='row-major')
-
-        imgData = tifffile.imread(os.path.join("ressources","pizQuadro.tif"))
         
         self.plotItemReal = pg.PlotItem(title="")
         self.imageViewReal = pg.ImageView(view=self.plotItemReal)
         self.centralWidget.addWidget(self.imageViewReal)
         self.imageViewReal.keyPressEvent = self.keyPressEvent
         self.imageViewReal.scene.sigMouseMoved.connect(self.mouseMoved)
-        self.imageViewReal.setImage(imgData)
+  
+        self.imageData = None
+        welcomeImage = tifffile.imread(os.path.join("ressources","strela.tif"))      
+        self.imageViewReal.setImage(welcomeImage)
+        self._imagesDisplayed = 0
 
         self.setupStatusBar()
 
@@ -89,6 +93,9 @@ class UI(QtWidgets.QMainWindow):
         self.statusBar.addWidget(widget)
 
     def mouseMoved(self, viewPos):
+        """
+        show x,y coordinates and pixel value for mouse position
+        """
         try:
             data = self.imageViewReal.image
             nRows, nCols = data.shape
@@ -106,16 +113,25 @@ class UI(QtWidgets.QMainWindow):
         except Exception as e:
             self.labelCoordinates.setText("Error: %s"%e)
 
-    def updateData(self, data):
-        if data is not None:
+    def updateImageView(self):
+        """
+        update image if new one available
+        """
+        if self.imageData is not None:
             self._imagesDisplayed += 1
-            logging.debug("image {} received, {} {}".format(self._imagesDisplayed, data.shape, data.dtype))
-            self.imageViewReal.setImage(data, autoRange=False,
+            logging.debug("image {} received, {} {}".format(self._imagesDisplayed, self.imageData.shape, self.imageData.dtype))
+            self.imageViewReal.setImage(self.imageData, autoRange=False,
                                 autoLevels=False, autoHistogramRange= False)
-            self.labelImagesDisplayed.setText("images displayed: {}".format(self._imagesDisplayed))
+        self.imageData = None
+
+    def updateData(self, data):
+        self.imageData = data
+        self.imagesReceived += 1
                 
     def updateFrameRate(self):
         dImages = self._imagesDisplayed - self.imageCounter
+        self.labelImagesDisplayed.setText("images received: {}".format(self.imagesReceived))
+        
         t = datetime.datetime.now().time()
         dt = t.second - self.startTime.second + (t.microsecond-self.startTime.microsecond)/1000000
         frameRate = dImages/dt
@@ -125,25 +141,29 @@ class UI(QtWidgets.QMainWindow):
         return frameRate
 
     def setupZmqReceivers(self, ip, threads=1):
+        self.imagesReceived = 0
+        logging.info(f"starting {threads} zmq receivers")
         self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
         for receiver in self.receivers:
             receiver.start()
+            receiver.signals.dataReceived.connect(self.updateData)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='STRELA LiveView for DECTRIS detectors')
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=DBGLVL)
+    
+    parser = argparse.ArgumentParser(description='STRELA ZMQ LiveView for DECTRIS detectors')
     parser.add_argument('ip', type=str, help="DECTRIS detector IP or hostname")
     parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of ZMQ receiver threads")
+    parser.add_argument('--fps', '-f', type=float, default=10.0, help="display refresh rate in Hz")
     args = parser.parse_args()
     
-    signal.signal(signal.SIGINT, signal.SIG_DFL) #enable ctrl + c abort
+    signal.signal(signal.SIGINT, signal.SIG_DFL) #enable ctrl + c abort   
     
-    try:
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=DBGLVL)
-        
+    try:        
         app = QtGui.QApplication(sys.argv)
         app.setWindowIcon(QtGui.QIcon(os.path.join("ressources","icon.png")))
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-        ui = UI(args.ip, args.nThreads)
+        ui = UI(args.ip, args.nThreads, args.fps)
         
     except (Exception, KeyboardInterrupt) as e:
         logging.error(e)

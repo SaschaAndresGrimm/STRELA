@@ -30,12 +30,13 @@ class ZMQReceiver(QThread):
 
     def receive(self):
         """
-        receive and return processed ZMQ frames
+        receive and remit QT signal with image data
         """
         logging.debug("zmq receiver {} polling tcp://{}:{}".format(self.name, self.ip, self.port))
         if self.socket.poll(100):
             frames = self.socket.recv_multipart(copy = False)
-            return self.processFrames(frames)
+            data = self.processFrames(frames)
+            self.signals.dataReceived.emit(data)
 
     def processFrames(self, frames):
         if frames:
@@ -56,25 +57,14 @@ class ZMQReceiver(QThread):
 
     @pyqtSlot()
     def run(self):
-        self.start_time = datetime.datetime.now().time()
         while True:
             try:
-                data = self.receive()
+                self.receive()
             except:
                 traceback.print_exc()
                 exctype, value = sys.exc_info()[:2]
                 self.signals.error.emit((exctype, value, traceback.format_exc()))
-            else:
-                if data is not None:
-                    self.signals.dataReceived.emit(data)
-                    t = datetime.datetime.now().time()
-                    dt = t.second - self.start_time.second + (t.microsecond-self.start_time.microsecond)/1000000
-                    self.start_time = datetime.datetime.now().time()
-                    logging.debug("receiver {} got image data with {} Hz".format(self.name, 1/dt))
-            #finally:
-            #    self.signals.finished.emit()
                 
 class WorkerSignals(QObject):
-    finished = pyqtSignal()
     error = pyqtSignal(tuple)
     dataReceived = pyqtSignal(object)
