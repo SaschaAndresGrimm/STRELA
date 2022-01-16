@@ -1,4 +1,3 @@
-from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, logging, json, datetime, tifffile, io, sys, numpy
@@ -34,12 +33,12 @@ class MonitorReceiver(QThread):
             frame = self.client.monitorImages("monitor")
             return self.processFrames(frame)
         except Exception as e:
-            log.error(f'monitos {self.name} error: {e}')
+            log.error(f'monitor {self.name} error: {e}')
 
     def processFrames(self, frame):
         data = tifffile.imread(io.BytesIO(frame))
 
-        # workaround strange pyqtgraph/np bug, where histogram cannot be built for empty data
+        # work around strange pyqtgraph/np bug, where histogram cannot be built for empty data
         data[0,0] = -1
         data[-1,0] = -1
         data[0,-1] = -1

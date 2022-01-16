@@ -1,4 +1,3 @@
-from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, zmq, logging, json, datetime

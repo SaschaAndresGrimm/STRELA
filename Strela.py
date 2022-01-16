@@ -1,6 +1,6 @@
 """
 STRELA -- STRE(am) L(iveview) A(pp)
-Demonstration of a basic LiveViewer for small DECTRIS area detectors with SIMPLON API.
+LiveViewer for small DECTRIS area detectors with SIMPLON API.
 """
 import PyQt5
 from PyQt5 import QtWidgets
@@ -26,8 +26,8 @@ log = logging.getLogger()
 from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
 
 __author__ = "Sascha Grimm"
-__date__ = "2022.01.15"
-__version__ = "0.9"
+__date__ = "2022.01.16"
+__version__ = "0.9.a"
 
 class UI(QtWidgets.QMainWindow):
 
@@ -43,7 +43,7 @@ class UI(QtWidgets.QMainWindow):
         self.imageCounter = 0
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.updateFrameRate)
-        self.timer.start(300)
+        self.timer.start(1000)
         
         #display refresh frequency
         self.fps = fps
@@ -99,6 +99,8 @@ class UI(QtWidgets.QMainWindow):
         self.labelImagesDisplayed = QtWidgets.QLabel(self.centralWidget)
         horizontalLayout.addWidget(self.labelImagesDisplayed)
         self.labelImagesDisplayed.setText("images displayed: 0")
+
+        horizontalLayout.addItem(spacerItem)
                 
         self.labelFrameRate = QtWidgets.QLabel(self.centralWidget)
         horizontalLayout.addWidget(self.labelFrameRate)
