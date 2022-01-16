@@ -13,7 +13,7 @@ import signal
 import logging
 import sys, os, argparse, datetime, time
 import tifffile
-from tools import zmqReceiver, monitorReceiver, DEigerClient, statusUpdater
+from tools import MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
 
 __author__ = "Sascha Grimm"
 __date__ = "2022.01.15"
@@ -45,7 +45,7 @@ class UI(QtWidgets.QMainWindow):
         logging.info(f"max. display refresh rate: {self.fps} Hz")
         
         #detector status information update
-        self.statusUpdater = statusUpdater.StatusUpdater(self.ip)
+        self.statusUpdater = StatusUpdater.StatusUpdater(self.ip)
         self.statusUpdater.start()
         self.statusUpdater.signals.detectorStatus.connect(self.updateStatus)
         
@@ -160,34 +160,23 @@ class UI(QtWidgets.QMainWindow):
         self.imagesReceived = 0
         logging.info(f"starting {threads} {sType} receivers")
         if sType == 'monitor':
-            self.receivers = [monitorReceiver.MonitorReceiver(ip, port=80, name = i+1) for i in range(threads)]
+            self.receivers = [MonitorReceiver.MonitorReceiver(ip, port=80, name = i+1) for i in range(threads)]
         elif sType == 'zmq':
-            self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+            self.receivers = [ZmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
         elif sType == 'dummy':
             return
         else:
             logging.info(f'receiver type {sType} unknown, using zmq')
-            self.receivers = [zmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
+            self.receivers = [ZmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
 
         for receiver in self.receivers:
             receiver.start()
             receiver.signals.dataReceived.connect(self.updateData)        
 
     def updateStatus(self, status):
-        self._setStatus(self.statusDetector, status['det'])
-        self._setStatus(self.statusMonitor, status['monitor'])
-        self._setStatus(self.statusZmq, status['stream'])
-
-    def _setStatus(self, widget, status):
-        text = widget.text()
-        newText = f'{text.split(":")[0]}: {status}'
-        widget.setText(newText)
-        if status in ['error','na', 'disabled']:
-            widget.setStyleSheet("background-color: red")
-        elif status in ['overflow', 'initialize', 'configure']:
-            widget.setStyleSheet("background-color: orange")
-        else:
-            widget.setStyleSheet("background-color: green")
+        self.statusUpdater.setStatus(self.statusDetector, status['det'])
+        self.statusUpdater.setStatus(self.statusMonitor, status['monitor'])
+        self.statusUpdater.setStatus(self.statusZmq, status['stream'])
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=DBGLVL)

@@ -21,16 +21,36 @@ class StatusUpdater(QThread):
         try:
             logging.debug("updating detector status")
             client = DEigerClient.DEigerClient(self.ip)
-            detectorStatus = client.detectorStatus('state')['value']
-            streamStatus = client.streamStatus('state')['value']
-            monitorStatus = client.monitorStatus('state')['value']   
 
-            self.signals.detectorStatus.emit({"det":detectorStatus,
-                                              "stream":streamStatus,
-                                              "monitor":monitorStatus})
+            status = {"det": client.detectorStatus('state')['value'],
+                    "stream": client.streamStatus('state')['value'],
+                    "monitor": client.monitorStatus('state')['value']
+                    }
                 
         except Exception as e:
-            logging.error(f'failure during status update: {e}')
+            logging.error(f'failure during detector status update: {e}')
+
+            status = {"det": "no connection",
+                    "stream": "no connection",
+                    "monitor": "no connection"
+                }         
+    
+        finally:
+            self.signals.detectorStatus.emit(status)
+            
+            
+    def setStatus(self, widget, status):
+        text = widget.text()
+        newText = f'{text.split(":")[0]}: {status}'
+        widget.setText(newText)
+        if status in ['error','na', 'disabled', 'no connection']:
+            widget.setStyleSheet("background-color: red")
+        elif status in ['overflow', 'initialize', 'configure']:
+            widget.setStyleSheet("background-color: orange")
+        elif status in ['acquire']:
+            widget.setStyleSheet("background-color: blue")
+        else:
+            widget.setStyleSheet("background-color: green")
 
     @pyqtSlot()
     def run(self):
