@@ -19,8 +19,9 @@ import socket
 import fnmatch
 import shutil
 
-#import http.client
-#import urllib.request, urllib.error, urllib.parse
+import logging
+logging.basicConfig()
+log = logging.getLogger(__name__)
 
 """
 Bad but working python3 backwards compability
@@ -36,7 +37,7 @@ except ImportError:
     import urllib2 as urllibRequest
 
 
-Version = '1.6.0'
+Version = '1.8.0'
 
 
 # noinspection PyInterpreter
@@ -464,7 +465,7 @@ class DEigerClient(object):
 
     def _log(self,*args):
         if self._verbose:
-            print(' '.join([ str(elem) for elem in args ]))
+            log.info(' '.join([ str(elem) for elem in args ]))
 
     def _url(self,module,task,parameter = None):
         url = "/{0}{1}/api/{2}/{3}/".format(self._urlPrefix,module,self._version,task)

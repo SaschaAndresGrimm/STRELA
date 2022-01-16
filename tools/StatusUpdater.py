@@ -1,7 +1,10 @@
-from PyQt5.QtCore import QThread, pyqtSlot, pyqtSignal, QObject, QThread
+from PyQt5.QtCore import QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import logging, time
 from . import DEigerClient
+
+log = logging.getLogger(__name__)
+
 
 class StatusUpdater(QThread):
     def __init__(self, ip, port=80, *args, **kwargs):
@@ -19,7 +22,7 @@ class StatusUpdater(QThread):
         update detector, monitor, and stream state in status bar
         """
         try:
-            logging.debug("updating detector status")
+            log.debug("updating detector status")
             client = DEigerClient.DEigerClient(self.ip)
 
             status = {"det": client.detectorStatus('state')['value'],
@@ -28,7 +31,7 @@ class StatusUpdater(QThread):
                     }
                 
         except Exception as e:
-            logging.error(f'failure during detector status update: {e}')
+            log.error(f'failure during detector status update: {e}')
 
             status = {"det": "no connection",
                     "stream": "no connection",

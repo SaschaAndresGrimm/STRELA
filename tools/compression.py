@@ -3,6 +3,9 @@ import lz4.block, bitshuffle
 import numpy as np
 import struct
 
+logging.basicConfig()
+log = logging.getLogger(__name__)
+
 __author__ = "SasG"
 __date__ = "26/11/18"
 __version__ = "0.1"
@@ -15,7 +18,7 @@ def decompress(frame, shape, dtype, encoding, verbose=False):
         data = readBSLZ4(frame, shape, dtype)
     else:
         msg = "decoding {} is not implemented".format(info["encoding"])
-        logging.error(msg)
+        log.error(msg)
         raise ValueError(msg)
     return data
 
@@ -34,7 +37,7 @@ def readBSLZ4(frame, shape, dtype, verbose=False):
     blocksize = np.ndarray(shape=(), dtype=">u4", buffer=data[8:12])/dtype.itemsize
     imgData = bitshuffle.decompress_lz4(blob, shape[::-1], dtype, blocksize)
     if verbose:
-        logging.debug("unpacked {0} bytes of bs-lz4 data".format(len(imgData)))
+        log.debug("unpacked {0} bytes of bs-lz4 data".format(len(imgData)))
     return imgData
 
 def readLZ4(frame, shape, dtype, verbose=False):
@@ -50,5 +53,5 @@ def readLZ4(frame, shape, dtype, verbose=False):
 
     imgData = lz4.block.decompress(struct.pack('<I', dataSize) + frame.bytes)
     if verbose:
-        logging.debug("unpacked {0} bytes of lz4 data".format(len(imgData)))
+        log.debug("unpacked {0} bytes of lz4 data".format(len(imgData)))
     return np.reshape(np.fromstring(imgData, dtype=dtype), shape[::-1])

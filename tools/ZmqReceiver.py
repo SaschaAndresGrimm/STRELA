@@ -1,8 +1,11 @@
 from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject, QThread
+from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, zmq, logging, json, datetime
 from . import compression, DEigerClient
+
+logging.basicConfig()
+log = logging.getLogger(__name__)
 
 class ZMQReceiver(QThread):
     def __init__(self, ip, port=9999, name=None, *args, **kwargs):
@@ -18,7 +21,7 @@ class ZMQReceiver(QThread):
         self.connect()
         
     def enableStream(self):
-        logging.debug(f'enabling stream on {self.ip}')
+        log.debug(f'enabling stream on {self.ip}')
         client = DEigerClient.DEigerClient(self.ip)
         resp = client.setStreamConfig('mode','enabled')
 
@@ -26,13 +29,13 @@ class ZMQReceiver(QThread):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PULL)
         self.socket.connect("tcp://{0}:{1}".format(self.ip, self.port))
-        logging.info("zmq receiver {} connected to tcp://{}:{}".format(self.name, self.ip, self.port))
+        log.info("zmq receiver {} connected to tcp://{}:{}".format(self.name, self.ip, self.port))
 
     def receive(self):
         """
         receive and remit QT signal with image data
         """
-        logging.debug("zmq receiver {} polling tcp://{}:{}".format(self.name, self.ip, self.port))
+        log.debug("zmq receiver {} polling tcp://{}:{}".format(self.name, self.ip, self.port))
         if self.socket.poll(100):
             frames = self.socket.recv_multipart(copy = False)
             data = self.processFrames(frames)

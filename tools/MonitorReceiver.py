@@ -1,8 +1,11 @@
 from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject, QThread
+from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, logging, json, datetime, tifffile, io, sys, numpy
 from . import DEigerClient
+
+logging.basicConfig()
+log = logging.getLogger(__name__)
 
 class MonitorReceiver(QThread):
     def __init__(self, ip, port=80, name=None, *args, **kwargs):
@@ -19,19 +22,19 @@ class MonitorReceiver(QThread):
         self.enableStream()
         
     def enableStream(self):
-        logging.debug(f'enabling monitor on {self.ip}')
+        log.debug(f'enabling monitor on {self.ip}')
         resp = self.client.setMonitorConfig('mode','enabled')
 
     def receive(self):
         """
         receive and remit QT signal with image data
         """
-        logging.debug("monitor receiver {} polling {}:{}".format(self.name, self.ip, self.port))
+        log.debug("monitor receiver {} polling {}:{}".format(self.name, self.ip, self.port))
         try:
             frame = self.client.monitorImages("monitor")
             return self.processFrames(frame)
         except Exception as e:
-            logging.error(f'monitos {self.name} error: {e}')
+            log.error(f'monitos {self.name} error: {e}')
 
     def processFrames(self, frame):
         data = tifffile.imread(io.BytesIO(frame))

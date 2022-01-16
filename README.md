@@ -7,7 +7,7 @@ This is a just for fun, educational project. Feel free to [play with the code](.
 
 ## Functionality
 * interactive LiveView via
-  * ZMQ stream (ca. 10 Hz)
+  * ZMQ stream (ca. 10 Hz, low latency)
   * monitor interface (ca. 1 Hz)
 * zoom, pan, ROI, projection, (auto-)scaling
 * control contrast, brightness, and color map 
@@ -29,8 +29,13 @@ optional arguments:
                         number of receiver threads
   --fps FPS, -f FPS     display refresh rate in Hz
   --stream STREAM, -s STREAM
-                        interface to use: [zmq|monitor|debug]
+                        interface to use: [zmq|monitor|dummy]
 ```
+## Testing
+A dummy data source can be used to test the interface without detector. An image of the Strela pass with randomly added noise is returned with approx 20Hz:
+```bash
+python3 Strela.py localhost -s dummy
+``` 
 
 ## Dependencies
 The software runs on any OS which supports python3 and Qt5:
@@ -43,6 +48,7 @@ The software runs on any OS which supports python3 and Qt5:
 
 ### Debian Bullseye
 ```
-sudo apt install libhdf5-dev python3-pip bitshuffle
+sudo apt install libhdf5-dev python3-pip bitshuffle git
 pip3 install numpy tifffile lz4 zmq PyQt5 pyqtgraph qdarkstyle
+git clone https://github.com/SaschaAndresGrimm/STRELA.git
 ```
