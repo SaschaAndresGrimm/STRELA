@@ -16,8 +16,6 @@ class ZMQReceiver(QThread):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
                 
-        self.enableStream()
-        self.connect()
         
     def enableStream(self):
         log.debug(f'enabling stream on {self.ip}')
@@ -60,7 +58,9 @@ class ZMQReceiver(QThread):
 
     @pyqtSlot()
     def run(self):
-        while True:
+        self.enableStream()
+        self.connect()
+        while self.isRunning():
             try:
                 self.receive()
             except:

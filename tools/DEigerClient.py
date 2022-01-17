@@ -63,7 +63,7 @@ class DEigerClient(object):
         self._verbose = verbose
         self._urlPrefix = ""
         self._user = None
-        self._connectionTimeout = 24*3600
+        self._connectionTimeout = 10
         self._connection = httplibClient.HTTPConnection(self._host,self._port, timeout = self._connectionTimeout)
         self._serializer = None
 

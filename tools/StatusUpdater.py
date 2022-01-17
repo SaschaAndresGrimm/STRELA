@@ -15,7 +15,7 @@ class StatusUpdater(QThread):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
                 
-        self.client = DEigerClient.DEigerClient(self.ip, self.port)            
+        self.client = DEigerClient.DEigerClient(self.ip, self.port)      
             
     def getStatus(self):
         """
@@ -57,7 +57,7 @@ class StatusUpdater(QThread):
 
     @pyqtSlot()
     def run(self):
-        while True:
+        while self.isRunning():
             try:
                 self.getStatus()
                 time.sleep(1)

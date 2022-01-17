@@ -209,6 +209,6 @@ if __name__ == "__main__":
         
     except (Exception, KeyboardInterrupt) as e:
         log.error(e)
-        
+        sys.exit(app.exec_())        
     finally:
         sys.exit(app.exec_())

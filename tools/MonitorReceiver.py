@@ -15,14 +15,13 @@ class MonitorReceiver(QThread):
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
-        
         self.client = DEigerClient.DEigerClient(self.ip, self.port)
-                
-        self.enableStream()
-        
+        self.data = numpy.ndarray((512,512), dtype='uint32')
+                        
     def enableStream(self):
         log.debug(f'enabling monitor on {self.ip}')
         resp = self.client.setMonitorConfig('mode','enabled')
+        log.info(f'monitor on {self.ip}:{self.port} enabled')
 
     def receive(self):
         """
@@ -51,8 +50,8 @@ class MonitorReceiver(QThread):
 
     @pyqtSlot()
     def run(self):
-        self.data = numpy.ndarray((512,512), dtype='uint32')
-        while True:
+        self.enableStream()
+        while self.isRunning():
             try:
                 #poll as fast as possible, will be just approx 2Hz
                 data =  self.receive() 
