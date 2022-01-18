@@ -33,5 +33,10 @@ class Links(CollapsibleBox):
         self.linkManuals.setText(f'<a href="https://www.dectris.com/support/manuals-docs/overview/">Manuals & Docs</a>')
         self.linkManuals.setOpenExternalLinks(True)
         self.vbox.addWidget(self.linkManuals)   
+
+        self.linkSrc = QtWidgets.QLabel(self)
+        self.linkSrc.setText(f'<a href="https://github.com/SaschaAndresGrimm/STRELA">STRELA Source Code</a>')
+        self.linkSrc.setOpenExternalLinks(True)
+        self.vbox.addWidget(self.linkSrc)   
         
         self.setContentLayout(self.vbox)

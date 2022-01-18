@@ -9,6 +9,7 @@ This is a just for fun, educational project. Feel free to [play with the code](.
 * interactive LiveView via
   * ZMQ stream (ca. 10 Hz, low latency)
   * monitor interface (ca. 1 Hz)
+* minimal detector control interface
 * zoom, pan, ROI, projection, (auto-)scaling
 * control contrast, brightness, and color map 
 * export images
@@ -49,7 +50,7 @@ The software runs on any OS which supports python3 and Qt5:
 ### Debian Bullseye
 ```
 sudo apt install libhdf5-dev python3-pip bitshuffle git
-pip3 install numpy tifffile lz4 zmq PyQt5 pyqtgraph qdarktheme
+pip3 install numpy tifffile lz4 zmq PyQt5 pyqtgraph qdarktheme argparse
 git clone https://github.com/SaschaAndresGrimm/STRELA.git
 ```
 

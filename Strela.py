@@ -25,7 +25,7 @@ log = logging.getLogger()
 
 from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
 from widgets.CollapsibleBox import CollapsibleBox
-from widgets import DetectorCommands, StreamCommands, Links, SystemCommands, FileWriterCommands
+from widgets import DetectorCommands, StreamCommands, Links,SystemCommands, FileWriterCommands, Convenience
 
 
 __author__ = "Sascha Grimm"
@@ -94,6 +94,7 @@ class UI(QtWidgets.QMainWindow):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         vlay = QtWidgets.QVBoxLayout(content)
+        vlay.addWidget(Convenience.ConvenienceFunc(self.ip, self.apiPort))
         vlay.addWidget(DetectorCommands.DetectorCommands(self.ip, self.apiPort))
         vlay.addWidget(StreamCommands.StreamCommands(self.ip, self.apiPort))
         vlay.addWidget(FileWriterCommands.FileWriterCommands(self.ip, self.apiPort))
@@ -220,23 +221,26 @@ def parseArgs():
     parser.add_argument('--apiPort', '-p', type=int, default=80, help="SIMPLON API port")
     parser.add_argument('--zmqPort', '-z', type=int, default=99999, help="zmq tcp port")
     parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of receiver threads")
-    parser.add_argument('--fps', '-f', type=float, default=10.0, help="display refresh rate in Hz")
+    parser.add_argument('--fps', '-f', type=float, default=15.0, help="display refresh rate in Hz")
     parser.add_argument('--stream', '-s', type=str, default="zmq", help="interface to use: [zmq|monitor|dummy]")
-    parser.add_argument('--light', '-l', type=bool, default="False", help="use light theme")
+    parser.add_argument('--light', '-l', action="store_true", help="use light theme")
 
 
     return parser.parse_args()
 
 if __name__ == "__main__":        
     signal.signal(signal.SIGINT, signal.SIG_DFL) #enable ctrl + c abort   
-    
+    args = parseArgs()
+   
     try:    
-        args = parseArgs()
         app = QtGui.QApplication(sys.argv)
         app.setWindowIcon(QtGui.QIcon(os.path.join("ressources","icon.png")))
-        app.setStyleSheet(qdarktheme.load_stylesheet())
-        if not args.light:
+       
+        if args.light:
+            app.setStyleSheet(qdarktheme.load_stylesheet("light"))
+        else:
             app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
+       
         ui = UI(args.ip, args.apiPort, args.nThreads, args.fps, args.stream)
         
     except (Exception, KeyboardInterrupt) as e:
