@@ -25,7 +25,7 @@ log = logging.getLogger()
 
 from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
 from widgets.CollapsibleBox import CollapsibleBox
-from widgets import DetectorCommands, StreamCommands, SystemCommands, FileWriterCommands
+from widgets import DetectorCommands, StreamCommands, Links, SystemCommands, FileWriterCommands
 
 
 __author__ = "Sascha Grimm"
@@ -98,6 +98,8 @@ class UI(QtWidgets.QMainWindow):
         vlay.addWidget(StreamCommands.StreamCommands(self.ip, self.apiPort))
         vlay.addWidget(FileWriterCommands.FileWriterCommands(self.ip, self.apiPort))
         vlay.addWidget(SystemCommands.SystemCommands(self.ip, self.apiPort))
+        vlay.addWidget(Links.Links(self.ip, self.apiPort))
+
 
         vlay.addStretch()
 
