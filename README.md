@@ -42,13 +42,13 @@ The software runs on any OS which supports python3 and Qt5:
 
 * Python3
 
-* UI: PyQt5, pyqtgraph, qdarkstyle
+* UI: PyQt5, pyqtgraph, qdarktheme
 
 * data handling: zmq, lz4, bitshuffle, tifffile, numpy
 
 ### Debian Bullseye
 ```
 sudo apt install libhdf5-dev python3-pip bitshuffle git
-pip3 install numpy tifffile lz4 zmq PyQt5 pyqtgraph qdarkstyle
+pip3 install numpy tifffile lz4 zmq PyQt5 pyqtgraph qdarktheme
 git clone https://github.com/SaschaAndresGrimm/STRELA.git
 ```

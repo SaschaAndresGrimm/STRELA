@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSlot
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
-import qdarkstyle
+import qdarkstyle, qdarktheme
 import signal
 
 import logging, logging.handlers
@@ -215,6 +215,8 @@ def parseArgs():
     parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of receiver threads")
     parser.add_argument('--fps', '-f', type=float, default=10.0, help="display refresh rate in Hz")
     parser.add_argument('--stream', '-s', type=str, default="zmq", help="interface to use: [zmq|monitor|dummy]")
+    parser.add_argument('--light', '-l', type=bool, default="False", help="use light theme")
+
 
     return parser.parse_args()
 
@@ -225,7 +227,9 @@ if __name__ == "__main__":
         args = parseArgs()
         app = QtGui.QApplication(sys.argv)
         app.setWindowIcon(QtGui.QIcon(os.path.join("ressources","icon.png")))
-        app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+        app.setStyleSheet(qdarktheme.load_stylesheet())
+        if not args.light:
+            app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
         ui = UI(args.ip, args.nThreads, args.fps, args.stream)
         
     except (Exception, KeyboardInterrupt) as e:
