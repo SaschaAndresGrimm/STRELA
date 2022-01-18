@@ -27,7 +27,8 @@ class StatusUpdater(QThread):
 
             status = {"det": client.detectorStatus('state')['value'],
                     "stream": client.streamStatus('state')['value'],
-                    "monitor": client.monitorStatus('state')['value']
+                    "monitor": client.monitorStatus('state')['value'],
+                    "fileWriter": client.fileWriterStatus('state')['value']
                     }
                 
         except Exception as e:
@@ -35,7 +36,8 @@ class StatusUpdater(QThread):
 
             status = {"det": "no connection",
                     "stream": "no connection",
-                    "monitor": "no connection"
+                    "monitor": "no connection",
+                    "fileWriter": "no connection"
                 }         
     
         finally:
@@ -46,9 +48,9 @@ class StatusUpdater(QThread):
         text = widget.text()
         newText = f'{text.split(":")[0]}: {status}'
         widget.setText(newText)
-        if status in ['error','na', 'disabled', 'no connection']:
+        if status in ['error','na', 'no connection']:
             widget.setStyleSheet("background-color: red")
-        elif status in ['overflow', 'initialize', 'configure']:
+        elif status in ['overflow', 'initialize', 'configure', 'disabled']:
             widget.setStyleSheet("background-color: orange")
         elif status in ['acquire']:
             widget.setStyleSheet("background-color: blue")

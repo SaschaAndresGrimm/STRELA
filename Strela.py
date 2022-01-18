@@ -131,9 +131,11 @@ class UI(QtWidgets.QMainWindow):
         #detector states
         self.statusZmq = QtWidgets.QLabel('Stream: na', self.centralWidget)
         self.statusMonitor = QtWidgets.QLabel('Monitor: na', self.centralWidget)
+        self.statusFileWriter = QtWidgets.QLabel('FileWriter: na', self.centralWidget)
         self.statusDetector = QtWidgets.QLabel('Detector: na', self.centralWidget)
         horizontalLayout.addWidget(self.statusZmq)
         horizontalLayout.addWidget(self.statusMonitor)
+        horizontalLayout.addWidget(self.statusFileWriter)
         horizontalLayout.addWidget(self.statusDetector)
 
         self.statusBar.addWidget(widget)
@@ -207,6 +209,7 @@ class UI(QtWidgets.QMainWindow):
     def updateStatus(self, status):
         self.statusUpdater.setStatus(self.statusDetector, status['det'])
         self.statusUpdater.setStatus(self.statusMonitor, status['monitor'])
+        self.statusUpdater.setStatus(self.statusFileWriter, status['fileWriter'])
         self.statusUpdater.setStatus(self.statusZmq, status['stream'])
 
 def parseArgs():
