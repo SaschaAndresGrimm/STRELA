@@ -52,3 +52,12 @@ sudo apt install libhdf5-dev python3-pip bitshuffle git
 pip3 install numpy tifffile lz4 zmq PyQt5 pyqtgraph qdarktheme
 git clone https://github.com/SaschaAndresGrimm/STRELA.git
 ```
+
+## Ideas for new features
+To be implemented on a rainy day:
+* detector control interface
+* convenience functions: single shot, movie mode
+* log file viewer in UI
+* FFT
+* h5 file input
+

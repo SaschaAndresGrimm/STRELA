@@ -25,7 +25,7 @@ log = logging.getLogger()
 
 from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
 from widgets.CollapsibleBox import CollapsibleBox
-from widgets import DetectorCommands, StreamCommands, SystemCommands
+from widgets import DetectorCommands, StreamCommands, SystemCommands, FileWriterCommands
 
 
 __author__ = "Sascha Grimm"
@@ -34,11 +34,12 @@ __version__ = "0.9.a"
 
 class UI(QtWidgets.QMainWindow):
 
-    def __init__(self, ip, threads=1, fps=10, sType='zmq'):
+    def __init__(self, ip, apiPort=80, threads=1, fps=10, sType='zmq'):
         super(UI, self).__init__()
         self.ip = ip
+        self.apiPort = apiPort
         self.setupUI()
-        self.setupReceivers(self.ip, threads, sType)
+        self.setupReceivers(self.ip, self.apiPort, threads, sType)
         self.show()
                 
         #frame rate calculations
@@ -56,7 +57,7 @@ class UI(QtWidgets.QMainWindow):
         log.info(f"max. display refresh rate: {self.fps} Hz")
         
         #detector status information update
-        self.statusUpdater = StatusUpdater.StatusUpdater(self.ip)
+        self.statusUpdater = StatusUpdater.StatusUpdater(self.ip, self.apiPort)
         self.statusUpdater.start()
         self.statusUpdater.signals.detectorStatus.connect(self.updateStatus)
         
@@ -93,9 +94,10 @@ class UI(QtWidgets.QMainWindow):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         vlay = QtWidgets.QVBoxLayout(content)
-        vlay.addWidget(DetectorCommands.DetectorCommands())
-        vlay.addWidget(StreamCommands.StreamCommands())
-        vlay.addWidget(SystemCommands.SystemCommands())
+        vlay.addWidget(DetectorCommands.DetectorCommands(self.ip, self.apiPort))
+        vlay.addWidget(StreamCommands.StreamCommands(self.ip, self.apiPort))
+        vlay.addWidget(FileWriterCommands.FileWriterCommands(self.ip, self.apiPort))
+        vlay.addWidget(SystemCommands.SystemCommands(self.ip, self.apiPort))
 
         vlay.addStretch()
 
@@ -184,11 +186,11 @@ class UI(QtWidgets.QMainWindow):
         self.imageCounter = self._imagesDisplayed
         return frameRate
 
-    def setupReceivers(self, ip, threads=1, sType='zmq'):
+    def setupReceivers(self, ip, apiPort, threads=1, sType='zmq'):
         self.imagesReceived = 0
         log.info(f"starting {threads} {sType} receiver(s)")
         if sType == 'monitor':
-            self.receivers = [MonitorReceiver.MonitorReceiver(ip, port=80, name = i+1) for i in range(threads)]
+            self.receivers = [MonitorReceiver.MonitorReceiver(ip, port=apiPort, name = i+1) for i in range(threads)]
         elif sType == 'zmq':
             self.receivers = [ZmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
         elif sType == 'dummy':
@@ -230,7 +232,7 @@ if __name__ == "__main__":
         app.setStyleSheet(qdarktheme.load_stylesheet())
         if not args.light:
             app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
-        ui = UI(args.ip, args.nThreads, args.fps, args.stream)
+        ui = UI(args.ip, args.apiPort, args.nThreads, args.fps, args.stream)
         
     except (Exception, KeyboardInterrupt) as e:
         log.error(e)

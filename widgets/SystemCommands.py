@@ -8,10 +8,10 @@ logging.basicConfig()
 log = logging.getLogger(__name__)
 
 class SystemCommands(CollapsibleBox):
-    def __init__(self, title="System Commands", parent=None):
+    def __init__(self, ip, port=80, title="System Commands", parent=None):
         super(SystemCommands, self).__init__(title, parent)
-        self.ip = '192.168.30.26'
-        self.port = 80
+        self.ip = ip
+        self.port = port
         self.client = DEigerClient(self.ip, self.port)
         
         self.vbox = QtWidgets.QVBoxLayout()

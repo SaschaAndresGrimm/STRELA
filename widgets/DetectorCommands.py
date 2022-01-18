@@ -8,10 +8,10 @@ logging.basicConfig()
 log = logging.getLogger(__name__)
 
 class DetectorCommands(CollapsibleBox):
-    def __init__(self, title="Detector Commands", parent=None):
+    def __init__(self, ip, port=80, title="Detector Commands", parent=None):
         super(DetectorCommands, self).__init__(title, parent)
-        self.ip = '192.168.30.26'
-        self.port = 80
+        self.ip = ip
+        self.port = port
         self.client = DEigerClient(self.ip, self.port)
         
         self.vbox = QtWidgets.QVBoxLayout()
