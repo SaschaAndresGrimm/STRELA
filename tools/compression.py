@@ -20,6 +20,7 @@ def decompress(frame, shape, dtype, encoding, verbose=False):
         msg = "decoding {} is not implemented".format(info["encoding"])
         log.error(msg)
         raise ValueError(msg)
+    
     return data
 
 def readBSLZ4(frame, shape, dtype, verbose=False):
@@ -36,8 +37,8 @@ def readBSLZ4(frame, shape, dtype, verbose=False):
     # blocksize is big endian uint32 starting at byte 8, divided by element size
     blocksize = np.ndarray(shape=(), dtype=">u4", buffer=data[8:12])/dtype.itemsize
     imgData = bitshuffle.decompress_lz4(blob, shape[::-1], dtype, blocksize)
-    if verbose:
-        log.debug("unpacked {0} bytes of bs-lz4 data".format(len(imgData)))
+    log.debug("unpacked {0} bytes of bs-lz4 data".format(len(imgData)))
+    
     return imgData
 
 def readLZ4(frame, shape, dtype, verbose=False):
@@ -52,6 +53,6 @@ def readLZ4(frame, shape, dtype, verbose=False):
     dataSize = dtype.itemsize*shape[0]*shape[1] # bytes * image size
 
     imgData = lz4.block.decompress(struct.pack('<I', dataSize) + frame.bytes)
-    if verbose:
-        log.debug("unpacked {0} bytes of lz4 data".format(len(imgData)))
+    log.debug("unpacked {0} bytes of lz4 data".format(len(imgData)))
+    
     return np.reshape(np.fromstring(imgData, dtype=dtype), shape[::-1])

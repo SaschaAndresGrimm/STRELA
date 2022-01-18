@@ -1,10 +1,10 @@
 from PyQt5.QtCore import QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
-import logging, time
+import logging, time, sys
 from . import DEigerClient
 
+logging.basicConfig()
 log = logging.getLogger(__name__)
-
 
 class StatusUpdater(QThread):
     def __init__(self, ip, port=80, *args, **kwargs):
@@ -60,13 +60,12 @@ class StatusUpdater(QThread):
         while self.isRunning():
             try:
                 self.getStatus()
-                time.sleep(1)
             except:
                 traceback.print_exc()
                 exctype, value = sys.exc_info()[:2]
                 self.signals.error.emit((exctype, value, traceback.format_exc()))
             finally:
-                time.sleep(3)
+                time.sleep(1)
                 
 class WorkerSignals(QObject):
     error = pyqtSignal(tuple)

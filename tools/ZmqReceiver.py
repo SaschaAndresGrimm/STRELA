@@ -35,8 +35,7 @@ class ZMQReceiver(QThread):
         log.debug("zmq receiver {} polling tcp://{}:{}".format(self.name, self.ip, self.port))
         if self.socket.poll(100):
             frames = self.socket.recv_multipart(copy = False)
-            data = self.processFrames(frames)
-            self.signals.dataReceived.emit(data)
+            self.processFrames(frames)
 
     def processFrames(self, frames):
         if frames:
@@ -54,7 +53,8 @@ class ZMQReceiver(QThread):
                 # typecasting to signed int might be better...
                 data[data==(2**(8*data.itemsize)-1)] = 0
                                 
-                return data
+                self.signals.dataReceived.emit(data)
+
 
     @pyqtSlot()
     def run(self):

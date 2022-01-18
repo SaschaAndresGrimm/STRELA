@@ -12,7 +12,7 @@ import signal
 
 import logging, logging.handlers
 import sys, os, argparse, datetime, time
-import tifffile
+import tifffile, random
 
 #log to log file and stdout
 fileHandler = logging.FileHandler(filename='strela.log')
@@ -24,6 +24,9 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger()
 
 from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
+from widgets.CollapsibleBox import CollapsibleBox
+from widgets import DetectorCommands, StreamCommands, SystemCommands
+
 
 __author__ = "Sascha Grimm"
 __date__ = "2022.01.16"
@@ -79,6 +82,22 @@ class UI(QtWidgets.QMainWindow):
         self._imagesDisplayed = 0
 
         self.setupStatusBar()
+        self.setupCtrlDock()
+        
+    def setupCtrlDock(self):
+        dock = QtWidgets.QDockWidget("Detector Control")
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
+        scroll = QtWidgets.QScrollArea()
+        dock.setWidget(scroll)
+        content = QtWidgets.QWidget()
+        scroll.setWidget(content)
+        scroll.setWidgetResizable(True)
+        vlay = QtWidgets.QVBoxLayout(content)
+        vlay.addWidget(DetectorCommands.DetectorCommands())
+        vlay.addWidget(StreamCommands.StreamCommands())
+        vlay.addWidget(SystemCommands.SystemCommands())
+
+        vlay.addStretch()
 
     def setupStatusBar(self):
         self.statusBar = QtWidgets.QStatusBar()
@@ -191,6 +210,8 @@ class UI(QtWidgets.QMainWindow):
 def parseArgs():
     parser = argparse.ArgumentParser(description='STRELA LiveView for DECTRIS detectors')
     parser.add_argument('ip', type=str, help="DECTRIS detector IP or hostname")
+    parser.add_argument('--apiPort', '-p', type=int, default=80, help="SIMPLON API port")
+    parser.add_argument('--zmqPort', '-z', type=int, default=99999, help="zmq tcp port")
     parser.add_argument('--nThreads', '-n', type=int, default=1, help="number of receiver threads")
     parser.add_argument('--fps', '-f', type=float, default=10.0, help="display refresh rate in Hz")
     parser.add_argument('--stream', '-s', type=str, default="zmq", help="interface to use: [zmq|monitor|dummy]")

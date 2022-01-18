@@ -8,6 +8,7 @@ Date: 3/3/2019
 Copyright See General Terms and Conditions (GTC) on http://www.dectris.com
 
 """
+from threading import Thread
 
 import base64
 import os.path
@@ -22,6 +23,16 @@ import shutil
 import logging
 logging.basicConfig()
 log = logging.getLogger(__name__)
+
+def threaded(fn):
+    """
+    To use as decorator to make a function call threaded.
+    """
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.start()
+        return thread
+    return wrapper
 
 """
 Bad but working python3 backwards compability
@@ -63,7 +74,7 @@ class DEigerClient(object):
         self._verbose = verbose
         self._urlPrefix = ""
         self._user = None
-        self._connectionTimeout = 10
+        self._connectionTimeout = 60
         self._connection = httplibClient.HTTPConnection(self._host,self._port, timeout = self._connectionTimeout)
         self._serializer = None
 
@@ -215,6 +226,7 @@ class DEigerClient(object):
         """
         return self._getRequest(self._url('detector','command','keys'))
 
+    @threaded
     def sendDetectorCommand(self,  command, parameter = None):
         """
         Send command to EIGER. The list of all available commands is obtained via listCommands().
