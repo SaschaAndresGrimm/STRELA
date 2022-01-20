@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, zmq, logging, json, datetime
-from . import compression, DEigerClient
+from . import compression, EigerClient
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class ZMQReceiver(QThread):
         
     def enableStream(self):
         log.debug(f'enabling stream on {self.ip}')
-        client = DEigerClient.DEigerClient(self.ip)
+        client = EigerClient.EigerClient(self.ip)
         resp = client.setStreamConfig('mode','enabled')
 
     def connect(self):

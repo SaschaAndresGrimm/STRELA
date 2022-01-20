@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, logging, json, datetime, tifffile, io, sys, numpy
-from . import DEigerClient
+from . import EigerClient
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class MonitorReceiver(QThread):
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
-        self.client = DEigerClient.DEigerClient(self.ip, self.port)
+        self.client = EigerClient.EigerClient(self.ip, self.port)
         self.data = numpy.ndarray((512,512), dtype='uint32')
                         
     def enableStream(self):

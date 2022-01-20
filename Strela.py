@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO,
                     )
 log = logging.getLogger()
 
-from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, DEigerClient
+from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, EigerClient
 from widgets.CollapsibleBox import CollapsibleBox
 from widgets import DetectorCommands, StreamCommands, Links,SystemCommands, FileWriterCommands, Convenience
 

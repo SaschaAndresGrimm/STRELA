@@ -26,8 +26,9 @@ class EigerClient:
     def _get(self, url):
         resp = requests.get(url)
         return resp.json()
-    
-    def _set(self, url, value=None, headers={}):
+ 
+    @threaded  
+    def _put(self, url, value=None, headers={}):
         if value is not None:
             data = json.dumps({'value': value})
         else:
@@ -45,83 +46,83 @@ class EigerClient:
     
     def setDetectorConfig(self, key, value):
         url = self._composeUrl('detector','config',key)
-        return self._set(url, value)
+        return self._put(url, value)
 
-    def getDetectorConfig(self, key):
+    def detectorConfig(self, key):
         url = self._composeUrl('detector','config', key)
         return self._get(url)
 
-    def getDetectorStatus(self, key):
+    def detectorStatus(self, key):
         url = self._composeUrl('detector','status', key)
         return self._get(url)
 
     def sendDetectorCommand(self, key):
         url = self._composeUrl('detector','command',key)
-        return self._set(url)
+        return self._put(url)
     
     def setStreamConfig(self, key, value):
         url = self._composeUrl('stream','config',key)
-        return self._set(url, value)
+        return self._put(url, value)
 
-    def getStreamConfig(self, key):
+    def streamConfig(self, key):
         url = self._composeUrl('stream','config', key)
         return self._get(url)
 
-    def getStreamStatus(self, key):
+    def streamStatus(self, key):
         url = self._composeUrl('stream','status', key)
         return self._get(url)
 
     def sendStreamCommand(self, key):
         url = self._composeUrl('stream','command',key)
-        return self._set(url) 
+        return self._put(url) 
 
     def setMonitorConfig(self, key, value):
         url = self._composeUrl('monitor','config',key)
-        return self._set(url, value)
+        return self._put(url, value)
 
-    def getMonitorConfig(self, key):
+    def monitorConfig(self, key):
         url = self._composeUrl('monitor','config', key)
         return self._get(url)
 
-    def getMonitorStatus(self, key):
+    def monitorStatus(self, key):
         url = self._composeUrl('monitor','status', key)
         return self._get(url)
 
     def sendMonitorCommand(self, key):
         url = self._composeUrl('monitor','command',key)
-        return self._set(url)     
+        return self._put(url)     
     
     def setFileWriterConfig(self, key, value):
         url = self._composeUrl('filewriter','config',key)
-        return self._set(url, value)
+        return self._put(url, value)
 
-    def getFileWriterConfig(self, key):
+    def fileWriterConfig(self, key):
         url = self._composeUrl('filewriter','config', key)
         return self._get(url)
 
-    def getFileWriterStatus(self, key):
+    def fileWriterStatus(self, key):
         url = self._composeUrl('filewriter','status', key)
         return self._get(url)
 
     def sendFileWriterCommand(self, key):
         url = self._composeUrl('filewriter','command',key)
-        return self._set(url)    
+        return self._put(url)    
 
     def setSystemConfig(self, key, value):
         url = self._composeUrl('system','config',key)
-        return self._set(url, value)
+        return self._put(url, value)
 
-    def getSystemConfig(self, key):
+    def systemConfig(self, key):
         url = self._composeUrl('system','config', key)
         return self._get(url)
 
-    def getSystemStatus(self, key):
+    def systemStatus(self, key):
         url = self._composeUrl('system','status', key)
         return self._get(url)
 
     def sendSystemCommand(self, key):
         url = self._composeUrl('system','command',key)
-        return self._set(url)     
+        return self._put(url)     
 
     def getMonitorImage(self, key='monitor'):
         url = f'http://{self._ip}:{self._port}/monitor/api/{self._api}/images/{key}'
@@ -139,7 +140,7 @@ class EigerClient:
                     "filters": ["base64"],
                     "data": b64encode(ndarray.data).decode('utf-8')}
         url = self._composeUrl('detector', 'config', 'pixel_mask')
-        return self._set(url, value=data, headers={'Content-Type': 'application/json'})
+        return self._put(url, value=data, headers={'Content-Type': 'application/json'})
 
     def getFlatfield(self):
         darray = self.getDetectorConfig('flatfield')['value']
@@ -153,7 +154,7 @@ class EigerClient:
                     "filters": ["base64"],
                     "data": b64encode(ndarray.data).decode('utf-8')}
         url = self._composeUrl('detector', 'config', 'flatfield')
-        return self._set(url, value=data, headers={'Content-Type': 'application/json'})
+        return self._put(url, value=data, headers={'Content-Type': 'application/json'})
 
     def fileWriterSave(self, fname, dir, delete=False):
         url = f'http://{self._ip}:{self._port}/data/{fname}'

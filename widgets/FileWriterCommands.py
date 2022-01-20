@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import logging
 
 from .CollapsibleBox import CollapsibleBox
-from tools.DEigerClient import DEigerClient
+from tools.EigerClient import EigerClient
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ class FileWriterCommands(CollapsibleBox):
         super(FileWriterCommands, self).__init__(title, parent)
         self.ip = ip
         self.port = port
-        self.client = DEigerClient(self.ip, self.port)
+        self.client = EigerClient(self.ip, self.port)
         
         self.vbox = QtWidgets.QVBoxLayout()
         

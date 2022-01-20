@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import logging, time, sys
-from . import DEigerClient
+from . import EigerClient
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class StatusUpdater(QThread):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
                 
-        self.client = DEigerClient.DEigerClient(self.ip, self.port)      
+        self.client = EigerClient.EigerClient(self.ip, self.port)      
             
     def getStatus(self):
         """
@@ -23,12 +23,11 @@ class StatusUpdater(QThread):
         """
         try:
             log.debug("updating detector status")
-            client = DEigerClient.DEigerClient(self.ip)
 
-            status = {"det": client.detectorStatus('state')['value'],
-                    "stream": client.streamStatus('state')['value'],
-                    "monitor": client.monitorStatus('state')['value'],
-                    "fileWriter": client.fileWriterStatus('state')['value']
+            status = {"det": self.client.detectorStatus('state')['value'],
+                    "stream": self.client.streamStatus('state')['value'],
+                    "monitor": self.client.monitorStatus('state')['value'],
+                    "fileWriter": self.client.fileWriterStatus('state')['value']
                     }
                 
         except Exception as e:

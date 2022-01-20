@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import logging, time
 
 from .CollapsibleBox import CollapsibleBox
-from tools.DEigerClient import DEigerClient
+from tools.EigerClient import EigerClient
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class ConvenienceFunc(CollapsibleBox):
         super(ConvenienceFunc, self).__init__(title, parent)
         self.ip = ip
         self.port = port
-        self.client = DEigerClient(self.ip, self.port)
+        self.client = EigerClient(self.ip, self.port)
         
         self.vbox = QtWidgets.QVBoxLayout()
         
@@ -54,7 +54,7 @@ class ConvenienceFunc(CollapsibleBox):
         if self.buttonContinuous.isChecked():
             self.buttonContinuous.setText('STOP')
             
-            log.info(f'preparing continuous exposure')
+            log.info(f'preparing continuous {frameRate} Hz exposure')
             self.client.setStreamConfig('mode','enabled')
             self.client.setDetectorConfig('count_time', 1./frameRate)
             self.client.setDetectorConfig('frame_time', 1./frameRate)
