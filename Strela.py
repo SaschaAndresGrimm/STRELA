@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO,
                     )
 log = logging.getLogger()
 
-from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, EigerClient
+from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, EigerClient, image
 from widgets.CollapsibleBox import CollapsibleBox
 from widgets import DetectorCommands, StreamCommands, Links,SystemCommands, FileWriterCommands, Convenience
 
@@ -71,15 +71,17 @@ class UI(QtWidgets.QMainWindow):
 
         pg.setConfigOptions(imageAxisOrder='row-major')
         
-        self.plotItemReal = pg.PlotItem(title="")
-        self.imageViewReal = pg.ImageView(view=self.plotItemReal)
-        self.centralWidget.addWidget(self.imageViewReal)
-        self.imageViewReal.keyPressEvent = self.keyPressEvent
-        self.imageViewReal.scene.sigMouseMoved.connect(self.mouseMoved)
+        self.plotItem = pg.PlotItem(title="")
+        self.imageView = pg.ImageView(view=self.plotItem)
+        self.centralWidget.addWidget(self.imageView)
+        self.imageView.keyPressEvent = self.keyPressEvent
+        self.imageView.scene.sigMouseMoved.connect(self.mouseMoved)
   
-        self.imageData = None
-        welcomeImage = tifffile.imread(os.path.join("ressources","strela.tif"))      
-        self.imageViewReal.setImage(welcomeImage)
+        welcomeImage = tifffile.imread(os.path.join("ressources","strela.tif"))
+        self.imageData = welcomeImage
+        self.fftImage = image.fft(welcomeImage)
+        self.newDataAvailable = None
+        self.imageView.setImage(welcomeImage)
         self._imagesDisplayed = 0
 
         self.setupStatusBar()
@@ -141,6 +143,14 @@ class UI(QtWidgets.QMainWindow):
         horizontalLayout.addWidget(self.statusFileWriter)
         horizontalLayout.addWidget(self.statusDetector)
 
+        horizontalLayout.addItem(spacerItem)
+        
+        #temporary place for fft button
+        self.fftButton = QtWidgets.QPushButton("  FFT on/off   ", self)
+        self.fftButton.setCheckable(True)
+        horizontalLayout.addWidget(self.fftButton)
+        self.fftButton.clicked.connect(self.onFFTButton)
+
         self.statusBar.addWidget(widget)
 
     def mouseMoved(self, viewPos):
@@ -148,10 +158,10 @@ class UI(QtWidgets.QMainWindow):
         show x,y coordinates and pixel value for mouse position
         """
         try:
-            data = self.imageViewReal.image
+            data = self.imageView.image
             nRows, nCols = data.shape
 
-            scenePos = self.imageViewReal.getImageItem().mapFromScene(viewPos)
+            scenePos = self.imageView.getImageItem().mapFromScene(viewPos)
             row, col = int(scenePos.y()), int(scenePos.x())
 
             if 0 <= row and row < nRows and 0 <= col and col < nCols:
@@ -168,16 +178,33 @@ class UI(QtWidgets.QMainWindow):
         """
         update image if new one available
         """
-        if self.imageData is not None:
+        if self.newDataAvailable:
             self._imagesDisplayed += 1
+            if self.fftButton.isChecked():
+                if self.fftImage is None:
+                    self.fftImage = image.fft(self.imageData)
+                    
+                img = self.fftImage
+            else:
+                img = self.imageData
+                
             log.debug("plot image {} ({} {})".format(self._imagesDisplayed, self.imageData.shape, self.imageData.dtype))
-            self.imageViewReal.setImage(self.imageData, autoRange=False,
-                                autoLevels=False, autoHistogramRange= False)
-        self.imageData = None
+            self.imageView.setImage(    img,
+                                        autoRange=False,
+                                        autoLevels=False,
+                                        autoHistogramRange= False)
+        self.newDataAvailable = False
 
     def updateData(self, data):
-        self.imageData = data
+        self.newDataAvailable = True
         self.imagesReceived += 1
+        self.imageData = data
+        if self.fftButton.isChecked():
+            self.fftImage = image.fft(data)
+        
+    def onFFTButton(self):
+        self.newDataAvailable = True
+        self.fftImage = image.fft(self.imageData)     
                 
     def updateFrameRate(self):
         dImages = self._imagesDisplayed - self.imageCounter
