@@ -35,14 +35,21 @@ class EigerClient:
             data = json.dumps({})
         reply = requests.put(url, data=data, headers=headers)
         assert reply.status_code in range(200, 300), reply.reason
-        
+     
         try:
             return reply.json()
         except:
             return reply.content
         
     def _composeUrl(self, module, param, key):
-        return f'http://{self._ip}:{self._port}/{module}/api/{self._api}/{param}/{key}'
+        url = f'http://{self._ip}:{self._port}/{module}/api/{self._api}/{param}/{key}'
+        log.debug(f'composed url: {url}')
+        return url
+  
+    def _composeExperimentalUrl(self, module, param, key):
+        url = f'http://{self._ip}:{self._port}/api/2-preview/{module}/{param}/{key}'
+        log.debug(f'composed url: {url}')
+        return url    
     
     def setDetectorConfig(self, key, value):
         url = self._composeUrl('detector','config',key)
@@ -74,6 +81,22 @@ class EigerClient:
 
     def sendStreamCommand(self, key):
         url = self._composeUrl('stream','command',key)
+        return self._put(url) 
+
+    def setStream2Config(self, key, value):
+        url = self._composeExperimentalUrl('stream','config',key)
+        return self._put(url, value)
+
+    def stream2Config(self, key):
+        url = self._composeExperimentalUrl('stream','config', key)
+        return self._get(url)
+
+    def stream2Status(self, key):
+        url = self._composeExperimentalUrl('stream','status', key)
+        return self._get(url)
+
+    def send2StreamCommand(self, key):
+        url = self._composeExperimentalUrl('stream','command',key)
         return self._put(url) 
 
     def setMonitorConfig(self, key, value):
@@ -124,7 +147,7 @@ class EigerClient:
         url = self._composeUrl('system','command',key)
         return self._put(url)     
 
-    def getMonitorImage(self, key='monitor'):
+    def monitorImages(self, key='monitor'):
         url = f'http://{self._ip}:{self._port}/monitor/api/{self._api}/images/{key}'
         return requests.get(url, headers={'Content-type': 'application/tiff'}).content
 
