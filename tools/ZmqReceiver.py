@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
+from PyQt5.QtCore import QTimer, QRunnable, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, zmq, logging, json, datetime
 from . import compression, EigerClient
@@ -6,7 +6,7 @@ from . import compression, EigerClient
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
-class ZMQReceiver(QThread):
+class ZMQReceiver(QRunnable):
     def __init__(self, ip, port=9999, name=None, *args, **kwargs):
         super(ZMQReceiver, self).__init__()
         self.ip = ip
@@ -60,7 +60,7 @@ class ZMQReceiver(QThread):
     def run(self):
         self.enableStream()
         self.connect()
-        while self.isRunning():
+        while True:
             try:
                 self.receive()
             except:

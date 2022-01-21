@@ -1,12 +1,12 @@
-from PyQt5.QtCore import QThread, pyqtSlot, pyqtSignal, QObject
+from PyQt5.QtCore import QThread, QRunnable, pyqtSlot, pyqtSignal, QObject
 import traceback
 import logging, time, sys
-from . import EigerClient
+from . import EigerClient 
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
-class StatusUpdater(QThread):
+class StatusUpdater(QRunnable):
     def __init__(self, ip, port=80, *args, **kwargs):
         super(StatusUpdater, self).__init__()
         self.ip = ip
@@ -58,7 +58,7 @@ class StatusUpdater(QThread):
 
     @pyqtSlot()
     def run(self):
-        while self.isRunning():
+        while True:
             try:
                 self.getStatus()
             except:

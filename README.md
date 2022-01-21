@@ -59,4 +59,5 @@ To be implemented on a rainy day:
 * detector control interface
 * log file viewer in UI
 * h5 file input
+* decouple data manipulation from GUI i.e. via zmq
 

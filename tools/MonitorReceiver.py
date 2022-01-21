@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject
+from PyQt5.QtCore import QTimer, QRunnable, QThread, pyqtSlot, pyqtSignal, QObject
 import traceback
 import time, logging, json, datetime, tifffile, io, sys, numpy
 from . import EigerClient
@@ -6,7 +6,7 @@ from . import EigerClient
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
-class MonitorReceiver(QThread):
+class MonitorReceiver(QRunnable):
     def __init__(self, ip, port=80, name=None, *args, **kwargs):
         super(MonitorReceiver, self).__init__()
         self.ip = ip
@@ -51,7 +51,7 @@ class MonitorReceiver(QThread):
     @pyqtSlot()
     def run(self):
         self.enableStream()
-        while self.isRunning():
+        while True:
             try:
                 #poll as fast as possible, will be just approx 2Hz
                 data =  self.receive() 

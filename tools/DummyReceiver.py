@@ -1,11 +1,11 @@
-from PyQt5.QtCore import QTimer, QThread, pyqtSlot, pyqtSignal, QObject, QEventLoop
+from PyQt5.QtCore import QTimer, QRunnable, QThread, pyqtSlot, pyqtSignal, QObject, QEventLoop
 import traceback
 import time, logging, datetime, tifffile, sys, numpy
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
-class DummyReceiver(QThread):
+class DummyReceiver(QRunnable):
     def __init__(self, ip, port=80, name=None, *args, **kwargs):
         super(DummyReceiver, self).__init__()
         self.ip = ip
@@ -15,11 +15,7 @@ class DummyReceiver(QThread):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
         self.data = tifffile.imread('./ressources/strela.tif')
-        
-        self.timer = QTimer()
-        self.timer.moveToThread(self)
-        self.timer.timeout.connect(self.receive)
-                                
+                                        
     def receive(self):
         """
         return noisy image data
@@ -33,10 +29,10 @@ class DummyReceiver(QThread):
  
     @pyqtSlot()       
     def run(self):
-        self.timer.start(50)
-        loop = QEventLoop()
-        loop.exec_()
-                
+        while True:
+           self.receive()
+           time.sleep(0.05)
+                    
 class WorkerSignals(QObject):
     error = pyqtSignal(tuple)
     dataReceived = pyqtSignal(object)

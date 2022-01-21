@@ -27,7 +27,6 @@ class EigerClient:
         resp = requests.get(url)
         return resp.json()
  
-    @threaded  
     def _put(self, url, value=None, headers={}):
         if value is not None:
             data = json.dumps({'value': value})

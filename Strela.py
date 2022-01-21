@@ -59,7 +59,7 @@ class UI(QtWidgets.QMainWindow):
         
         #detector status information update
         self.statusUpdater = StatusUpdater.StatusUpdater(self.ip, self.apiPort)
-        self.statusUpdater.start()
+        self.threadPool.start(self.statusUpdater)
         self.statusUpdater.signals.detectorStatus.connect(self.updateStatus)
         
     def setupUI(self):
@@ -236,7 +236,7 @@ class UI(QtWidgets.QMainWindow):
             self.receivers = [ZmqReceiver.ZMQReceiver(ip, port=9999, name = i+1) for i in range(threads)]
 
         for receiver in self.receivers:
-            receiver.start()
+            self.threadPool.start(receiver)
             receiver.signals.dataReceived.connect(self.updateData)        
 
     def updateStatus(self, status):
