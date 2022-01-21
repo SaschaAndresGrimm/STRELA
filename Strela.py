@@ -4,7 +4,7 @@ LiveViewer for small DECTRIS area detectors with SIMPLON API.
 """
 import PyQt5
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, QThreadPool
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 import qdarkstyle, qdarktheme
@@ -38,6 +38,7 @@ class UI(QtWidgets.QMainWindow):
         super(UI, self).__init__()
         self.ip = ip
         self.apiPort = apiPort
+        self.threadPool = QThreadPool()
         self.setupUI()
         self.setupReceivers(self.ip, self.apiPort, threads, sType)
         self.show()
@@ -79,7 +80,7 @@ class UI(QtWidgets.QMainWindow):
   
         welcomeImage = tifffile.imread(os.path.join("ressources","strela.tif"))
         self.imageData = welcomeImage
-        self.fftImage = image.fft(welcomeImage)
+        self.fftImage = image.FFT(welcomeImage).fft()
         self.newDataAvailable = None
         self.imageView.setImage(welcomeImage)
         self._imagesDisplayed = 0
@@ -146,7 +147,7 @@ class UI(QtWidgets.QMainWindow):
         horizontalLayout.addItem(spacerItem)
         
         #temporary place for fft button
-        self.fftButton = QtWidgets.QPushButton("  FFT on/off   ", self)
+        self.fftButton = QtWidgets.QPushButton("   FFT on/off   ", self)
         self.fftButton.setCheckable(True)
         horizontalLayout.addWidget(self.fftButton)
         self.fftButton.clicked.connect(self.onFFTButton)
@@ -180,10 +181,7 @@ class UI(QtWidgets.QMainWindow):
         """
         if self.newDataAvailable:
             self._imagesDisplayed += 1
-            if self.fftButton.isChecked():
-                if self.fftImage is None:
-                    self.fftImage = image.fft(self.imageData)
-                    
+            if self.fftButton.isChecked():                    
                 img = self.fftImage
             else:
                 img = self.imageData
@@ -200,11 +198,16 @@ class UI(QtWidgets.QMainWindow):
         self.imagesReceived += 1
         self.imageData = data
         if self.fftButton.isChecked():
-            self.fftImage = image.fft(data)
-        
+            fft = image.FFT(data)
+            self.threadPool.start(fft)
+            fft.signals.finished.connect(self.updateFFTData)
+
+    def updateFFTData(self, data):
+        self.fftImage = data
+            
     def onFFTButton(self):
         self.newDataAvailable = True
-        self.fftImage = image.fft(self.imageData)     
+        self.fftImage = image.FFT(self.imageData).fft()     
                 
     def updateFrameRate(self):
         dImages = self._imagesDisplayed - self.imageCounter

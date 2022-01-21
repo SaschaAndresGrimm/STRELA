@@ -9,11 +9,11 @@ This is a just for fun, educational project. Feel free to [play with the code](.
 * interactive LiveView via
   * ZMQ stream (ca. 10 Hz, low latency)
   * monitor interface (ca. 1 Hz)
-* minimal detector control interface
+* minimal detector control interface and status monitoring
+* FFT
 * zoom, pan, ROI, projection, (auto-)scaling
 * control contrast, brightness, and color map 
 * export images
-* monitor detector status
 
 ## Run STRELA
 ```
@@ -57,8 +57,6 @@ git clone https://github.com/SaschaAndresGrimm/STRELA.git
 ## Ideas for new features
 To be implemented on a rainy day:
 * detector control interface
-* convenience functions: single shot, movie mode
 * log file viewer in UI
-* FFT
 * h5 file input
 
