@@ -3,6 +3,7 @@ import logging, time
 
 from .CollapsibleBox import CollapsibleBox
 from tools.EigerClient import EigerClient
+from tools.Worker import Worker
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -10,11 +11,12 @@ log = logging.getLogger(__name__)
 #need proper rewriting of eigerclient using pyqt signals
 
 class ConvenienceFunc(CollapsibleBox):
-    def __init__(self, ip, port=80, title="Convenience Functions", parent=None):
+    def __init__(self, ip, port=80, title="Quick Acquisition", parent=None):
         super(ConvenienceFunc, self).__init__(title, parent)
         self.ip = ip
         self.port = port
         self.client = EigerClient(self.ip, self.port)
+        self.threadPool = QtCore.QThreadPool()
         
         self.vbox = QtWidgets.QVBoxLayout()
         
@@ -41,13 +43,10 @@ class ConvenienceFunc(CollapsibleBox):
         self.client.setDetectorConfig('ntrigger', 1)
         
         log.info(f'starting {exposureTime} s single exposure')        
-        self.client.sendDetectorCommand('arm')
-        time.sleep(1)
-        self.client.sendDetectorCommand('trigger')
-        #time.sleep(exposureTime)
-        #self.client.sendDetectorCommand('disarm')
-        log.info(f'finished {exposureTime} s single exposure')        
-
+        worker = Worker(lambda: self.client.sendDetectorCommand('arm'))
+        self.threadPool.start(worker)
+        worker.signals.finished.connect(lambda: self.client.sendDetectorCommand('trigger'))
+        
     def onContinuous(self):
         frameRate = 20
         
@@ -63,13 +62,24 @@ class ConvenienceFunc(CollapsibleBox):
             self.client.setDetectorConfig('ntrigger', 1)
             
             log.info(f'starting continuous exposure')
-            self.client.sendDetectorCommand('arm')
-            time.sleep(1)
-            self.client.sendDetectorCommand('trigger')
-            # add method to poll status and re-set button
-            # needs to become a thread
-        
+            worker = Worker(lambda: self.client.sendDetectorCommand('arm'))
+            self.threadPool.start(worker)
+            worker.signals.finished.connect(lambda: self.client.sendDetectorCommand('trigger'))
+            
+            worker = Worker(self.checkIdle)
+            self.threadPool.start(worker)
+            worker.signals.finished.connect(self.onContinuous)
+            
         else:
             self.buttonContinuous.setText('Continuous')
             self.client.sendDetectorCommand('abort')
             log.info('stopped continuous acquisition')
+            
+
+    @QtCore.pyqtSlot()
+    def checkIdle(self):
+        time.sleep(5)
+        while self.client.detectorStatus('state')['value'] in ['acquire',]:
+            time.sleep(1)
+        self.buttonContinuous.setChecked(False)
+        return

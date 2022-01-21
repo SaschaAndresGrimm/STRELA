@@ -22,19 +22,22 @@ class EigerClient:
         self._ip = ip
         self._port = port
         self._api = api
-
+        
     def _get(self, url):
         resp = requests.get(url)
         return resp.json()
- 
+    
+    @threaded
     def _put(self, url, value=None, headers={}):
-        if value is not None:
-            data = json.dumps({'value': value})
-        else:
-            data = json.dumps({})
-        reply = requests.put(url, data=data, headers=headers)
-        assert reply.status_code in range(200, 300), reply.reason
-     
+        try:
+            if value is not None:
+                data = json.dumps({'value': value})
+            else:
+                data = json.dumps({})
+            reply = requests.put(url, data=data, headers=headers)
+            assert reply.status_code in range(200, 300), reply.reason
+        except Exception as e:
+            log.error(e)
         try:
             return reply.json()
         except:
