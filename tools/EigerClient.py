@@ -37,7 +37,7 @@ class EigerClient:
             reply = requests.put(url, data=data, headers=headers)
             assert reply.status_code in range(200, 300), reply.reason
         except Exception as e:
-            log.error(e)
+            log.error(f'error {url}, {value}: {e}')
         
         time.sleep(0.1)
         try:

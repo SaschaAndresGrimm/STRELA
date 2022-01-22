@@ -10,8 +10,7 @@ This is a just for fun, educational project. Feel free to [play with the code](.
   * ZMQ stream (ca. 10 Hz, low latency)
   * monitor interface (ca. 1 Hz)
 * minimal detector control interface and status monitoring
-* FFT
-* zoom, pan, ROI, projection, (auto-)scaling
+* FFT, zoom, pan, ROI, projection, (auto-)scaling
 * control contrast, brightness, and color map 
 * export images
 
@@ -57,7 +56,6 @@ git clone https://github.com/SaschaAndresGrimm/STRELA.git
 ## Ideas for new features
 To be implemented on a rainy day:
 * detector control interface
-* log file viewer in UI
 * h5 file input
 * decouple data manipulation from GUI i.e. via zmq
 * ini file to change default configuration parameters

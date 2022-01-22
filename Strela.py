@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO,
                     )
 log = logging.getLogger()
 
-from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, EigerClient, image
+from tools import DummyReceiver, MonitorReceiver, StatusUpdater, ZmqReceiver, EigerClient, image, WindowLogger
 from widgets.CollapsibleBox import CollapsibleBox
 from widgets import DetectorCommands, StreamCommands, Links,SystemCommands, FileWriterCommands, Convenience
 
@@ -62,6 +62,7 @@ class UI(QtWidgets.QMainWindow):
         self.threadPool.start(self.statusUpdater)
         self.statusUpdater.signals.detectorStatus.connect(self.updateStatus)
         
+        
     def setupUI(self):
         self.setWindowTitle("STRELA -- Stream LiveView App")
         self.resize(1000,1000)
@@ -87,6 +88,7 @@ class UI(QtWidgets.QMainWindow):
 
         self.setupStatusBar()
         self.setupCtrlDock()
+        self.setupLogDock()
         
     def setupCtrlDock(self):
         dock = QtWidgets.QDockWidget("Detector Control")
@@ -104,8 +106,26 @@ class UI(QtWidgets.QMainWindow):
         vlay.addWidget(SystemCommands.SystemCommands(self.ip, self.apiPort))
         vlay.addWidget(Links.Links(self.ip, self.apiPort))
 
-
         vlay.addStretch()
+        
+    def setupLogDock(self):
+        dock = QtWidgets.QDockWidget("Log")
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+        scroll = QtWidgets.QScrollArea()
+        dock.setWidget(scroll)
+        content = QtWidgets.QWidget()
+        scroll.setWidget(content)
+        scroll.setWidgetResizable(True) 
+        vlay = QtWidgets.QVBoxLayout(content)
+        
+        handler = WindowLogger.Handler(self)
+        handler.setFormatter(log.handlers[0].formatter)
+        windowLogger = QtWidgets.QPlainTextEdit(self)
+        windowLogger.setReadOnly(True)
+        vlay.addWidget(windowLogger)
+
+        log.addHandler(handler)
+        handler.new_record.connect(windowLogger.appendPlainText)
 
     def setupStatusBar(self):
         self.statusBar = QtWidgets.QStatusBar()
