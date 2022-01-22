@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QTimer, QRunnable, QThread, pyqtSlot, pyqtSignal, QObject, QEventLoop
+from PyQt5.QtCore import QTimer, QRunnable, QEventLoop, pyqtSlot, pyqtSignal, QObject, QEventLoop
 import traceback
 import time, logging, datetime, tifffile, sys, numpy
 
@@ -15,6 +15,11 @@ class DummyReceiver(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
         self.data = tifffile.imread('./ressources/strela.tif')
+ 
+         # receiving frames
+        self.timerReceive = QTimer()
+        self.timerReceive.timeout.connect(self.receive)
+        self.timerReceive.start(50)
                                         
     def receive(self):
         """
@@ -29,9 +34,8 @@ class DummyReceiver(QRunnable):
  
     @pyqtSlot()       
     def run(self):
-        while True:
-           self.receive()
-           time.sleep(0.05)
+        loop = QEventLoop()
+        loop.exec_()
                     
 class WorkerSignals(QObject):
     error = pyqtSignal(tuple)

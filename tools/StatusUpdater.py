@@ -40,8 +40,7 @@ class StatusUpdater(QRunnable):
                 }         
     
         finally:
-            self.signals.detectorStatus.emit(status)
-            
+            self.signals.detectorStatus.emit(status)   
             
     def setStatus(self, widget, status):
         text = widget.text()

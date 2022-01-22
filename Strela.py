@@ -30,7 +30,7 @@ from widgets import DetectorCommands, StreamCommands, Links,SystemCommands, File
 
 __author__ = "Sascha Grimm"
 __date__ = "2022.01.16"
-__version__ = "0.9.a"
+__version__ = "0.9.b"
 
 class UI(QtWidgets.QMainWindow):
 

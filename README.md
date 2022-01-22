@@ -60,4 +60,5 @@ To be implemented on a rainy day:
 * log file viewer in UI
 * h5 file input
 * decouple data manipulation from GUI i.e. via zmq
+* ini file to change default configuration parameters
 

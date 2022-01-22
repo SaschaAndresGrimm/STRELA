@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QTimer, QRunnable, QThread, pyqtSlot, pyqtSignal, QObject
-import traceback
+from PyQt5.QtCore import QTimer, QRunnable, QThread, pyqtSlot, pyqtSignal, QObject, QEventLoop
+import traceback, sys
 import time, zmq, logging, json, datetime
 from . import compression, EigerClient
 
@@ -15,7 +15,19 @@ class ZMQReceiver(QRunnable):
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
-                
+ 
+        # processing frames
+        self.timerProcess = QTimer()
+        self.timerProcess.timeout.connect(self.processFrames)
+        self.timerProcess.start(50)
+ 
+        # receiving frames
+        self.timerReceive = QTimer()
+        self.timerReceive.timeout.connect(self.receive)
+        self.timerReceive.start(10)
+        
+        self.frames = None
+        self.data = None
         
     def enableStream(self):
         log.debug(f'enabling stream on {self.ip}')
@@ -35,10 +47,13 @@ class ZMQReceiver(QRunnable):
         log.debug("zmq receiver {} polling tcp://{}:{}".format(self.name, self.ip, self.port))
         if self.socket.poll(100):
             frames = self.socket.recv_multipart(copy = False)
-            self.processFrames(frames)
+            self.frames = frames
 
-    def processFrames(self, frames):
-        if frames:
+    def processFrames(self):
+        if self.frames is not None:
+            frames = self.frames
+            self.frames = None
+            
             header = json.loads(frames[0].bytes)
             if header["htype"].startswith("dimage-"):
                 info = json.loads(frames[1].bytes)
@@ -55,18 +70,12 @@ class ZMQReceiver(QRunnable):
                                 
                 self.signals.dataReceived.emit(data)
 
-
     @pyqtSlot()
     def run(self):
         self.enableStream()
         self.connect()
-        while True:
-            try:
-                self.receive()
-            except:
-                traceback.print_exc()
-                exctype, value = sys.exc_info()[:2]
-                self.signals.error.emit((exctype, value, traceback.format_exc()))
+        loop = QEventLoop()
+        loop.exec_()
                 
 class WorkerSignals(QObject):
     error = pyqtSignal(tuple)
