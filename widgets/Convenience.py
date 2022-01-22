@@ -35,38 +35,46 @@ class ConvenienceFunc(CollapsibleBox):
     
     def onSingleShot(self, exposureTime=1):
         log.info(f'preparing {exposureTime} s single exposure')
+        self.client.sendDetectorCommand('abort')
         self.client.setStreamConfig('mode','enabled')
-        self.client.setDetectorConfig('count_time', exposureTime)
-        self.client.setDetectorConfig('frame_time', exposureTime)
-        self.client.setDetectorConfig('trigger_mode', 'ints')
-        self.client.setDetectorConfig('nimages', 1)
-        self.client.setDetectorConfig('ntrigger', 1)
+        detectorConfig = [ ('count_time', exposureTime),
+                            ('frame_time', exposureTime),
+                            ('trigger_mode', 'ints'),
+                            ('nimages', 1),
+                            ('ntrigger', 1),
+                            ]
+        for config in detectorConfig:
+            self.client.setDetectorConfig(*config)
+            time.sleep(0.1)
         
         log.info(f'starting {exposureTime} s single exposure')        
-        worker = Worker(lambda: self.client.sendDetectorCommand('arm'))
+        self.client.sendDetectorCommand('arm')
+        worker = Worker(self.trigger)
         self.threadPool.start(worker)
-        worker.signals.finished.connect(lambda: self.client.sendDetectorCommand('trigger'))
         
     def onContinuous(self):
         frameRate = 20
-        
+        self.client.sendDetectorCommand('abort')
+       
         if self.buttonContinuous.isChecked():
             self.buttonContinuous.setText('STOP')
             
             log.info(f'preparing continuous {frameRate} Hz exposure')
             self.client.setStreamConfig('mode','enabled')
-            self.client.setDetectorConfig('count_time', 1./frameRate)
-            self.client.setDetectorConfig('frame_time', 1./frameRate)
-            self.client.setDetectorConfig('trigger_mode', 'ints')
-            self.client.setDetectorConfig('nimages', frameRate*24*60*60)
-            self.client.setDetectorConfig('ntrigger', 1)
+            detectorConfig = [('count_time', 1/frameRate),
+                            ('frame_time', 1/frameRate),
+                            ('trigger_mode', 'ints'),
+                            ('nimages', 1000000),
+                            ('ntrigger', 1),
+                            ]
+            for config in detectorConfig:
+                self.client.setDetectorConfig(*config)
+                time.sleep(0.1)
             
             log.info(f'starting continuous exposure')
-            worker = Worker(lambda: self.client.sendDetectorCommand('arm'))
-            self.threadPool.start(worker)
-            worker.signals.finished.connect(lambda: self.client.sendDetectorCommand('trigger'))
+            self.client.sendDetectorCommand('arm')
             
-            worker = Worker(self.checkIdle)
+            worker = Worker(self.trigger)
             self.threadPool.start(worker)
             worker.signals.finished.connect(self.onContinuous)
             
@@ -77,9 +85,22 @@ class ConvenienceFunc(CollapsibleBox):
             
 
     @QtCore.pyqtSlot()
-    def checkIdle(self):
+    def trigger(self):
+        retry = 3
         time.sleep(5)
-        while self.client.detectorStatus('state')['value'] in ['acquire',]:
-            time.sleep(1)
+        while retry:
+            try:
+                state = self.client.detectorStatus('state')['value']
+                if state == 'acquire':
+                    retry = 3
+                elif state == 'ready':
+                    self.client.sendDetectorCommand('trigger')
+                else:
+                    retry = 0
+            except Exception as e:
+                retry -= 1
+            finally:
+                time.sleep(0.2)
+                
         self.buttonContinuous.setChecked(False)
         return

@@ -3,7 +3,7 @@ import numpy
 from base64 import b64encode, b64decode
 from threading import Thread
 
-import logging
+import logging, time
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
@@ -38,6 +38,8 @@ class EigerClient:
             assert reply.status_code in range(200, 300), reply.reason
         except Exception as e:
             log.error(e)
+        
+        time.sleep(0.1)
         try:
             return reply.json()
         except:
